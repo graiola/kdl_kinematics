@@ -1,5 +1,12 @@
 #include "kdl_kinematics/kdl_kinematics.h"
 
+using namespace std;
+using namespace KDL;
+using namespace ros;
+using namespace Eigen;
+
+namespace kdl_kinematics {
+
 void KDLKinematics::Twist2MatrixXd(const Twist& in, MatrixXd& out){
 	assert(out.rows() == 6);
 	assert(out.cols() == 1);
@@ -114,7 +121,8 @@ void KDLKinematics::ComputeIk(const MatrixXd& joints_pos, const MatrixXd& v_in, 
 	qdot_out = eigen_jacobian_pinv_ * v_in;
 }
 
-void KDLKinematics::ComputeIk(const VectorXd& joints_pos, const VectorXd& v_in, VectorXd& qdot_out){
+//void KDLKinematics::ComputeIk(const VectorXd& joints_pos, const VectorXd& v_in, VectorXd& qdot_out){
+void KDLKinematics::ComputeIk(const Eigen::Ref<Eigen::VectorXd> joints_pos, const Eigen::Ref<Eigen::VectorXd> v_in, Eigen::Ref<Eigen::VectorXd> qdot_out){
 	ComputeJac(joints_pos,eigen_jacobian_);
 	PseudoInverse(eigen_jacobian_,eigen_jacobian_pinv_);
 	qdot_out = eigen_jacobian_pinv_ * v_in;
@@ -161,7 +169,8 @@ void KDLKinematics::ComputeFk(const VectorXd& joints_pos, Vector3d& position, Ma
 	}
 }
 
-void KDLKinematics::ComputeFk(const VectorXd& joints_pos, VectorXd& pose_pos){
+//void KDLKinematics::ComputeFk(const VectorXd& joints_pos, VectorXd& pose_pos){
+void KDLKinematics::ComputeFk(const Eigen::Ref<Eigen::VectorXd> joints_pos, Eigen::Ref<Eigen::VectorXd> pose_pos){
 	assert(joints_pos.size() >= Ndof);
 	assert(pose_pos.size() >= 6);
 	for(int i = 0; i<Ndof; i++)
@@ -188,10 +197,12 @@ void KDLKinematics::ComputeJac(const MatrixXd& joints_pos, MatrixXd& jac){
 	jac = kdl_jacobian_.data;
 }
 
-void KDLKinematics::ComputeJac(const VectorXd& joints_pos, MatrixXd& jac){
+//void KDLKinematics::ComputeJac(const VectorXd& joints_pos, MatrixXd& jac){
+void KDLKinematics::ComputeJac(const Eigen::Ref<Eigen::VectorXd> joints_pos, MatrixXd& jac){	
+	
 	for(int i = 0; i<Ndof; i++)
 		kdl_joints(i) = joints_pos(i);
-		
+
 	kdl_jacobian_solver_ptr->JntToJac(kdl_joints,kdl_jacobian_);   
 	
 	jac = kdl_jacobian_.data;
@@ -199,4 +210,6 @@ void KDLKinematics::ComputeJac(const VectorXd& joints_pos, MatrixXd& jac){
 
 void KDLKinematics::ComputeJac(const JntArray& joints_pos, Jacobian& jac){	
 	kdl_jacobian_solver_ptr->JntToJac(joints_pos,jac);   
+}
+
 }
