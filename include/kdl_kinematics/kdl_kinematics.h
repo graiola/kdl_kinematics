@@ -34,7 +34,6 @@ class KDLKinematics
 		
 		void ComputeIk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& v_in, Eigen::Ref<Eigen::VectorXd> qdot_out);
 
-		bool isParsed(){return parsed;}
 		int getNdof(){return Ndof_;}
 		
 		// External use
@@ -60,7 +59,6 @@ class KDLKinematics
 		boost::shared_ptr<KDL::ChainJntToJacSolver> kdl_jacobian_solver_ptr_;
 		KDL::Frame kdl_end_effector_;
 		double damp_max_, det_max_, epsilon_, damp_, det_;
-		bool parsed;
 		int Ndof_;
 		boost::shared_ptr<svd_t> svd_;
 		Eigen::VectorXd svd_vect_;

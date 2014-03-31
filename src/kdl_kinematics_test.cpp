@@ -4,16 +4,7 @@ using namespace kdl_kinematics;
 
 // Note: To run this test the meka's robot_description should be correctly loaded on the ros parameter server
 
-int main(int argc, char *argv[])
-{
-	// How to create the object
-	std::string end_effector = "palm_right";
-	std::string root_name = "T0";
-	KDLKinematics kdl_kinematics(root_name,end_effector);
-	if(kdl_kinematics.isParsed())
-		ROS_INFO("Kdl kinematics correctly created");
-	else
-		return 0;
+void testInterfaces(KDLKinematics& kdl_kinematics){
 	
 	// Testing FK interface
 	ROS_INFO("TESTING: ComputeFk(joints_pos,pose_pos)");
@@ -40,4 +31,24 @@ int main(int argc, char *argv[])
 	ROS_INFO_STREAM("jac:\n" << jac);
 	Eigen::MatrixXd jac_pinv = kdl_kinematics.getInvJacobian();
 	ROS_INFO_STREAM("jac_pinv:\n" << jac_pinv);
+}
+
+int main(int argc, char *argv[])
+{
+	// How to create the object:
+	std::string end_effector = "palm_right";
+	std::string root_name = "T0";
+	
+	try
+	{
+		KDLKinematics kdl_kinematics(root_name,end_effector);
+		testInterfaces(kdl_kinematics);
+	}
+	catch(const std::runtime_error& e)
+	{	
+		std::cout << e.what() << std::endl; // FIX, why I can not use ROS_ERROR_STREAM??
+		return 0;
+	}
+
+	
 }

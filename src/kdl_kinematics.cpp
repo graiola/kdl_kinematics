@@ -13,7 +13,6 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	assert(det_max_ >= 0.0);
 	assert(epsilon_ >= 0.0);
 	
-	parsed = true;
 	ros_node_name_ = "kdl_kinematics";
 	int argc = 1;
 	char* arg0 = strdup(ros_node_name_.c_str());
@@ -25,13 +24,15 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	ros_nh_->param("robot_description", robot_description_, string());
 	
 	if (!kdl_parser::treeFromString(robot_description_, kdl_tree_)){
-		ROS_ERROR("Failed to construct kdl tree");
-		parsed = false;
+		std::string err("Exception catched during kdl_kinematics initialization: impossible to retrain the robot description and to create the kdl tree");
+		//ROS_ERROR_STREAM(err);
+		throw std::runtime_error(err);
 	}
 	
 	if(!kdl_tree_.getChain(chain_root_,chain_tip_,kdl_chain_)){
-		ROS_ERROR("Failed to retrain kdl chain");  
-		parsed = false;
+		std::string err("Exception catched during kdl_kinematics initialization: impossible to get the kdl chain from " + chain_root_ +" to " + chain_tip_);
+		//ROS_ERROR_STREAM(err);
+		throw std::runtime_error(err);
 	}
 	
 	kdl_jacobian_solver_ptr_ = boost::make_shared<ChainJntToJacSolver> (kdl_chain_);
