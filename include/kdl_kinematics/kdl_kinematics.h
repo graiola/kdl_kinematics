@@ -20,6 +20,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
+////////// KDLFRAME2VECTOR
+#define KDLFRAME2VECTOR(kdl_frame_in,vector_out) do { for(int i = 0; i<3; i++) vector_out[i] = kdl_frame_in.p(i); kdl_frame_in.M.GetRPY(vector_out[3],vector_out[4],vector_out[5]); } while (0)
+
 namespace kdl_kinematics {
 	
 typedef Eigen::JacobiSVD<Eigen::MatrixXd> svd_t;
@@ -29,21 +32,50 @@ class KDLKinematics
 	public:
 		KDLKinematics(std::string chain_root, std::string chain_tip, double damp_max = 0.1, double det_max = 0.0, double epsilon = 0.01);
 		
-		void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::Vector3d> position, Eigen::Ref<Eigen::Matrix3d> orientation);
-		void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::VectorXd> pose_pos);
+		template<typename in_vector_t>
+		inline void ComputeFk(const in_vector_t& joints_pos, Eigen::Ref<Eigen::Vector3d> position, Eigen::Ref<Eigen::Matrix3d> orientation)
+		{
+			ComputeFk(joints_pos);
+			for(int i = 0; i<3; i++){
+				position(i) = kdl_end_effector_.p(i);
+				for(int j = 0; j<3; j++)
+					orientation(i,j) = kdl_end_effector_.M(i,j);
+			}
+		}
+		template<typename in_vector_t, typename out_vector_t>
+		inline void ComputeFk(const in_vector_t& joints_pos, out_vector_t& pose_pos)
+		{
+			assert(pose_pos.size() >= 6);
+			ComputeFk(joints_pos);
+			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos);
+		}
+		template<typename in_vector_t>
+		inline void ComputeFk(const in_vector_t& joints_pos, Eigen::Ref<Eigen::VectorXd> pose_pos) // Unfortunally Eigen::Ref can not be templated as reference argument
+		{
+			assert(pose_pos.size() >= 6);
+			ComputeFk(joints_pos);
+			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos);
+		}
+
 		
 		void ComputeIk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& v_in, Eigen::Ref<Eigen::VectorXd> qdot_out);
 
 		int getNdof(){return Ndof_;}
 		
-		// External use
 		Eigen::MatrixXd getInvJacobian(){return eigen_jacobian_;}
 		Eigen::MatrixXd getJacobian(){return eigen_jacobian_pinv_;}
 	
-	protected: // For internal use (they use preallocated variables)
+	protected: // For internal use only (they use preallocated variables)
 		void PseudoInverse(); 
 		void ComputeJac();
-
+		template<typename in_vector_t>
+		inline void ComputeFk(const in_vector_t& joints_pos)
+		{
+			assert(joints_pos.size() >= Ndof_);
+			for(int i = 0; i<Ndof_; i++)
+				kdl_joints_(i) = joints_pos[i];
+			kdl_fk_solver_ptr_->JntToCart(kdl_joints_,kdl_end_effector_);
+		}
 	private:
 		std::string ros_node_name_;
 		std::string robot_description_;

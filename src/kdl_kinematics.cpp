@@ -53,9 +53,57 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	ros_nh_->shutdown();
 }
 
+void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
+{
+	assert(joints_pos.size() >= Ndof_);
+	assert(v_in.size() >= 6);
+	assert(qdot_out.size() >= Ndof_);
+	
+	for(int i = 0; i<Ndof_; i++)
+		kdl_joints_(i) = joints_pos(i);
+	
+	ComputeJac();
+	PseudoInverse();
+	
+	qdot_out = eigen_jacobian_pinv_ * v_in;
+}
+
+/*
+void KDLKinematics::ComputeFk(const Ref<const VectorXd>& joints_pos, Ref<Vector3d> position, Ref<Matrix3d> orientation)
+{
+	assert(joints_pos.size() >= Ndof_);
+	//for(int i = 0; i<Ndof_; i++)
+	//	kdl_joints_(i) = joints_pos(i);
+	//kdl_fk_solver_ptr_->JntToCart(kdl_joints_,kdl_end_effector_);
+	
+	ComputeFk(joints_pos);
+	
+	for(int i = 0; i<3; i++){
+		position(i) = kdl_end_effector_.p(i);
+		for(int j = 0; j<3; j++)
+			orientation(i,j) = kdl_end_effector_.M(i,j);
+	}
+}
+
+void KDLKinematics::ComputeFk(const Ref<const VectorXd>& joints_pos, Ref<VectorXd> pose_pos)
+{
+	
+	assert(pose_pos.size() >= 6);
+	//assert(joints_pos.size() >= Ndof_);
+	//for(int i = 0; i<Ndof_; i++)
+	//	kdl_joints_(i) = joints_pos(i);
+	//kdl_fk_solver_ptr_->JntToCart(kdl_joints_,kdl_end_effector_);
+	
+	ComputeFk(joints_pos);
+	
+	for(int i = 0; i<3; i++)
+		pose_pos(i) = kdl_end_effector_.p(i);
+	kdl_end_effector_.M.GetRPY(pose_pos(3),pose_pos(4),pose_pos(5));
+}*/
+
 void KDLKinematics::PseudoInverse()
 {	
-	//eigen_jacobian_pinv_ = eigen_jacobian_.transpose(); // Svd only works with rows > cols
+	//eigen_jacobian_pinv_ = eigen_jacobian_.transpose(); // Svd only works with rows > cols fixed in Eigen3 :)
 	
 	if(damp_max_ == 0)  // Case 1: No damping
 		damp_ = 0.0;
@@ -77,46 +125,6 @@ void KDLKinematics::PseudoInverse()
 	}
 	
 	eigen_jacobian_pinv_ = svd_->matrixV() * svd_vect_.asDiagonal() * svd_->matrixU().transpose();	
-}
-
-void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
-{
-	assert(joints_pos.size() >= Ndof_);
-	assert(v_in.size() >= 6);
-	assert(qdot_out.size() >= Ndof_);
-	
-	for(int i = 0; i<Ndof_; i++)
-		kdl_joints_(i) = joints_pos(i);
-	
-	ComputeJac();
-	PseudoInverse();
-	
-	qdot_out = eigen_jacobian_pinv_ * v_in;
-}
-
-void KDLKinematics::ComputeFk(const Ref<const VectorXd>& joints_pos, Ref<Vector3d> position, Ref<Matrix3d> orientation)
-{
-	assert(joints_pos.size() >= Ndof_);
-	for(int i = 0; i<Ndof_; i++)
-		kdl_joints_(i) = joints_pos(i);
-	kdl_fk_solver_ptr_->JntToCart(kdl_joints_,kdl_end_effector_);
-	for(int i = 0; i<3; i++){
-		position(i) = kdl_end_effector_.p(i);
-		for(int j = 0; j<3; j++)
-			orientation(i,j) = kdl_end_effector_.M(i,j);
-	}
-}
-
-void KDLKinematics::ComputeFk(const Ref<const VectorXd>& joints_pos, Ref<VectorXd> pose_pos)
-{
-	assert(joints_pos.size() >= Ndof_);
-	assert(pose_pos.size() >= 6);
-	for(int i = 0; i<Ndof_; i++)
-		kdl_joints_(i) = joints_pos(i);
-	kdl_fk_solver_ptr_->JntToCart(kdl_joints_,kdl_end_effector_);
-	for(int i = 0; i<3; i++)
-		pose_pos(i) = kdl_end_effector_.p(i);
-	kdl_end_effector_.M.GetRPY(pose_pos(3),pose_pos(4),pose_pos(5));
 }
 
 void KDLKinematics::ComputeJac()
