@@ -17,6 +17,9 @@
 #include <kdl/frames_io.hpp>
 #include <kdl/tree.hpp>
 #include <kdl_parser/kdl_parser.hpp>
+
+////////// BOOST
+#include <boost/tokenizer.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
@@ -32,6 +35,8 @@ class KDLKinematics
 	public:
 		KDLKinematics(std::string chain_root, std::string chain_tip, double damp_max = 0.1, double det_max = 0.0, double epsilon = 0.01);
 		
+		~KDLKinematics();
+		
 		template<typename in_vector_t>
 		inline void ComputeFk(const in_vector_t& joints_pos, Eigen::Ref<Eigen::Vector3d> position, Eigen::Ref<Eigen::Matrix3d> orientation)
 		{
@@ -45,14 +50,14 @@ class KDLKinematics
 		template<typename in_vector_t, typename out_vector_t>
 		inline void ComputeFk(const in_vector_t& joints_pos, out_vector_t& pose_pos)
 		{
-			assert(pose_pos.size() >= 6);
+			assert(pose_pos.size() >= cart_size_);
 			ComputeFk(joints_pos);
 			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos);
 		}
 		template<typename in_vector_t>
 		inline void ComputeFk(const in_vector_t& joints_pos, Eigen::Ref<Eigen::VectorXd> pose_pos) // Unfortunally Eigen::Ref can not be templated as reference argument
 		{
-			assert(pose_pos.size() >= 6);
+			assert(pose_pos.size() >= cart_size_);
 			ComputeFk(joints_pos);
 			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos);
 		}
@@ -62,11 +67,14 @@ class KDLKinematics
 
 		int getNdof(){return Ndof_;}
 		
-		Eigen::MatrixXd getInvJacobian(){return eigen_jacobian_;}
-		Eigen::MatrixXd getJacobian(){return eigen_jacobian_pinv_;}
+		Eigen::MatrixXd getInvJacobian(){return eigen_jacobian_pinv_;}
+		Eigen::MatrixXd getJacobian(){return eigen_jacobian_;}
+		
+		void setMask(std::string mask_str);
 	
 	protected: // For internal use only (they use preallocated variables)
-		void PseudoInverse(); 
+		void PseudoInverse();
+		bool PseudoInverse(const Eigen::MatrixXd& a, Eigen::MatrixXd& result, double damp_max, double det_max, double epsilon);
 		void ComputeJac();
 		template<typename in_vector_t>
 		inline void ComputeFk(const in_vector_t& joints_pos)
@@ -76,11 +84,13 @@ class KDLKinematics
 				kdl_joints_(i) = joints_pos[i];
 			kdl_fk_solver_ptr_->JntToCart(kdl_joints_,kdl_end_effector_);
 		}
+		void setCartSize(int size);
+		void resizeCartAttributes(int size);
 	private:
 		std::string ros_node_name_;
 		std::string robot_description_;
 		std::string chain_root_, chain_tip_;
-		boost::shared_ptr<ros::NodeHandle> ros_nh_;
+		boost::shared_ptr<ros::NodeHandle> ros_nh_ptr_;
 		KDL::Tree kdl_tree_;
 		KDL::Chain kdl_chain_;
 		KDL::JntArray kdl_joints_;
@@ -91,9 +101,10 @@ class KDLKinematics
 		boost::shared_ptr<KDL::ChainJntToJacSolver> kdl_jacobian_solver_ptr_;
 		KDL::Frame kdl_end_effector_;
 		double damp_max_, det_max_, epsilon_, damp_, det_;
-		int Ndof_;
+		int Ndof_, cart_size_;
 		boost::shared_ptr<svd_t> svd_;
 		Eigen::VectorXd svd_vect_;
+		std::vector<int> mask_;
 		
 };
 

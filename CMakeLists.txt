@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(orocos_kdl REQUIRED)
+find_package(Boost REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -88,7 +89,7 @@ catkin_package(
    INCLUDE_DIRS include
    LIBRARIES kdl_kinematics
    CATKIN_DEPENDS kdl_parser roscpp
-   DEPENDS system_lib
+   DEPENDS system_lib orocos_kdl boost
 )
 
 ###########
@@ -97,7 +98,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-  include ${catkin_INCLUDE_DIRS} ${orocos_kdl_INCLUDE_DIRS}
+  include ${catkin_INCLUDE_DIRS} ${orocos_kdl_INCLUDE_DIRS} ${Boost_INCLUDE_DIR}
 )
 
 ## Declare a cpp library
@@ -111,7 +112,7 @@ add_executable(${PROJECT_NAME}_test src/kdl_kinematics_test.cpp)
 # add_dependencies(kdl_meka_parser_node kdl_meka_parser_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${Boost_LIBRARIES})
 target_link_libraries(kdl_kinematics_test ${PROJECT_NAME})
 
 #############
