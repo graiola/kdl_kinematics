@@ -46,6 +46,7 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	kdl_jacobian_.resize(Ndof_);
 	
 	mask_.resize(6);
+	pose_pos_tmp_.resize(6); // It's always x y z r p y, then it will be filtered to obtain the output in computeFk
 	setCartSize(6); // Default x y z r p y
 	
 	ros_nh_ptr_->shutdown();
@@ -134,39 +135,6 @@ void KDLKinematics::resizeCartAttributes(int size)
 	svd_.reset(new svd_t(size,Ndof_)); // FIX, prb this is not rt safe
 	svd_vect_.resize(size);
 }
-
-/*
-void KDLKinematics::ComputeFk(const Ref<const VectorXd>& joints_pos, Ref<Vector3d> position, Ref<Matrix3d> orientation)
-{
-	assert(joints_pos.size() >= Ndof_);
-	//for(int i = 0; i<Ndof_; i++)
-	//	kdl_joints_(i) = joints_pos(i);
-	//kdl_fk_solver_ptr_->JntToCart(kdl_joints_,kdl_end_effector_);
-	
-	ComputeFk(joints_pos);
-	
-	for(int i = 0; i<3; i++){
-		position(i) = kdl_end_effector_.p(i);
-		for(int j = 0; j<3; j++)
-			orientation(i,j) = kdl_end_effector_.M(i,j);
-	}
-}
-
-void KDLKinematics::ComputeFk(const Ref<const VectorXd>& joints_pos, Ref<VectorXd> pose_pos)
-{
-	
-	assert(pose_pos.size() >= 6);
-	//assert(joints_pos.size() >= Ndof_);
-	//for(int i = 0; i<Ndof_; i++)
-	//	kdl_joints_(i) = joints_pos(i);
-	//kdl_fk_solver_ptr_->JntToCart(kdl_joints_,kdl_end_effector_);
-	
-	ComputeFk(joints_pos);
-	
-	for(int i = 0; i<3; i++)
-		pose_pos(i) = kdl_end_effector_.p(i);
-	kdl_end_effector_.M.GetRPY(pose_pos(3),pose_pos(4),pose_pos(5));
-}*/
 
 void KDLKinematics::PseudoInverse()
 {	

@@ -29,6 +29,7 @@
 namespace kdl_kinematics {
 	
 typedef Eigen::JacobiSVD<Eigen::MatrixXd> svd_t;
+typedef std::vector<int> mask_t;
 
 class KDLKinematics
 {
@@ -50,16 +51,31 @@ class KDLKinematics
 		template<typename in_vector_t, typename out_vector_t>
 		inline void ComputeFk(const in_vector_t& joints_pos, out_vector_t& pose_pos)
 		{
-			assert(pose_pos.size() >= cart_size_);
+			assert(pose_pos.size() == cart_size_);
 			ComputeFk(joints_pos);
-			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos);
+			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos_tmp_);
+			int idx = 0;
+			for(int i = 0; i < mask_.size(); i++)
+				if(mask_[i])
+				{
+					pose_pos[idx] = pose_pos_tmp_[i];
+					idx++;
+				}
+			
 		}
 		template<typename in_vector_t>
 		inline void ComputeFk(const in_vector_t& joints_pos, Eigen::Ref<Eigen::VectorXd> pose_pos) // Unfortunally Eigen::Ref can not be templated as reference argument
 		{
-			assert(pose_pos.size() >= cart_size_);
+			assert(pose_pos.size() == cart_size_);
 			ComputeFk(joints_pos);
-			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos);
+			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos_tmp_);
+			int idx = 0;
+			for(int i = 0; i < mask_.size(); i++)
+				if(mask_[i])
+				{
+					pose_pos[idx] = pose_pos_tmp_[i];
+					idx++;
+				}
 		}
 
 		
@@ -104,8 +120,8 @@ class KDLKinematics
 		int Ndof_, cart_size_;
 		boost::shared_ptr<svd_t> svd_;
 		Eigen::VectorXd svd_vect_;
-		std::vector<int> mask_;
-		
+		mask_t mask_;
+		std::vector<double> pose_pos_tmp_;
 };
 
 }

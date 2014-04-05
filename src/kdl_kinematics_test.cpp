@@ -11,7 +11,7 @@ void testInterfacesEigen(KDLKinematics& kdl_kinematics, int cart_size){
 	// Testing FK interface
 	ROS_INFO("TESTING: ComputeFk(joints_pos,pose_pos)");
 	Eigen::VectorXd joints_pos = Eigen::VectorXd::Ones(kdl_kinematics.getNdof()) * 0.4;
-	Eigen::VectorXd pose_pos(6); // x y z r p y
+	Eigen::VectorXd pose_pos(cart_size); // x y z r p y
 	kdl_kinematics.ComputeFk(joints_pos,pose_pos);
 	ROS_INFO_STREAM("RESULT:\n pose_pos:\n" << pose_pos);
 	
