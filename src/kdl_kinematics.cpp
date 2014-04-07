@@ -7,10 +7,9 @@ using namespace Eigen;
 
 namespace kdl_kinematics {
 
-KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_max, double det_max, double epsilon):chain_root_(chain_root),chain_tip_(chain_tip),damp_max_(damp_max),det_max_(det_max),epsilon_(epsilon)
+KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_max, double epsilon):chain_root_(chain_root),chain_tip_(chain_tip),damp_max_(damp_max),epsilon_(epsilon)
 {
 	assert(damp_max_ >= 0.0);
-	assert(det_max_ >= 0.0);
 	assert(epsilon_ >= 0.0);
 	
 	ros_node_name_ = "kdl_kinematics"; // Fix to move in the interface, so I can generate different nodes with different names for each kinematic chain.
@@ -107,19 +106,8 @@ void KDLKinematics::setMask(string mask_str)
 		}	
 	}
 	
-	// Third define the new cartesian dimension i.e fix all the hardcoded six
+	// Define the new cartesian dimension
 	setCartSize(cart_size);
-	
-	/*
-	std::cout << "cart_size_" << std::endl;
-	std::cout << cart_size_ << std::endl;
-	std::cout << "eigen_jacobian_" << std::endl;
-	std::cout << eigen_jacobian_ << std::endl;
-	std::cout << "eigen_jacobian_pinv_" << std::endl;
-	std::cout << eigen_jacobian_pinv_ << std::endl;
-	std::cout << "svd_vect_" << std::endl;
-	std::cout << svd_vect_ << std::endl;
-	*/
 }
 
 void KDLKinematics::setCartSize(int size)
@@ -134,32 +122,27 @@ void KDLKinematics::resizeCartAttributes(int size)
 	eigen_jacobian_pinv_.resize(Ndof_,size);
 	svd_.reset(new svd_t(size,Ndof_)); // FIX, prb this is not rt safe
 	svd_vect_.resize(size);
+	// Clear
+	eigen_jacobian_.fill(0.0);
+	eigen_jacobian_pinv_.fill(0.0);
+	svd_vect_.fill(0.0);
+	
 }
 
 void KDLKinematics::PseudoInverse()
 {	
-	//eigen_jacobian_pinv_ = eigen_jacobian_.transpose(); // Svd only works with rows > cols fixed in Eigen3 :)
-	
-	if(damp_max_ == 0)  // Case 1: No damping
-		damp_ = 0.0;
-	else if(det_max_ != 0) // Case 2: Linear damping
-	{
-		det_ = (eigen_jacobian_*eigen_jacobian_.transpose()).determinant();
-		damp_ = damp_max_ - damp_max_ * det_/det_max_;
-	}
-	else // Case 3: Constant damping
-		damp_ = damp_max_;
 
 	svd_->compute(eigen_jacobian_, ComputeThinU | ComputeThinV);
 	svd_vect_ = svd_->singularValues();
+	svd_min_ = svd_vect_.minCoeff();
+	
 	for (int i = 0; i < svd_vect_.size(); i++)
 	{
-		if(std::abs(svd_vect_(i))>epsilon_)
-			svd_vect_(i) = 1.0/svd_vect_(i);
-		else
-			svd_vect_(i) = svd_vect_(i)/(svd_vect_(i)*svd_vect_(i)+damp_*damp_);
+		svd_curr_ = svd_vect_[i];
+		
+		damp_ = std::exp(-4/epsilon_*svd_vect_[i])*damp_max_;
+		svd_vect_[i] = svd_curr_/(svd_curr_*svd_curr_+damp_*damp_);
 	}
-	
 	
 	eigen_jacobian_pinv_ = svd_->matrixV() * svd_vect_.asDiagonal() * svd_->matrixU().transpose();	
 }

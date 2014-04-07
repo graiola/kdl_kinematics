@@ -24,7 +24,7 @@
 #include <boost/make_shared.hpp>
 
 ////////// KDLFRAME2VECTOR
-#define KDLFRAME2VECTOR(kdl_frame_in,vector_out) do { for(int i = 0; i<3; i++) vector_out[i] = kdl_frame_in.p(i); kdl_frame_in.M.GetRPY(vector_out[3],vector_out[4],vector_out[5]); } while (0)
+#define KDLFRAME2VECTOR(kdl_frame_in,vector_out) do { for(int i = 0; i<3; i++) vector_out[i] = kdl_frame_in.p(i); kdl_frame_in.M.GetRPY(vector_out[3],vector_out[4],vector_out[5]); } while (0) 
 
 namespace kdl_kinematics {
 	
@@ -34,7 +34,7 @@ typedef std::vector<int> mask_t;
 class KDLKinematics
 {
 	public:
-		KDLKinematics(std::string chain_root, std::string chain_tip, double damp_max = 0.1, double det_max = 0.0, double epsilon = 0.01);
+		KDLKinematics(std::string chain_root, std::string chain_tip, double damp_max = 0.1, double epsilon = 0.01);
 		
 		~KDLKinematics();
 		
@@ -85,12 +85,13 @@ class KDLKinematics
 		
 		Eigen::MatrixXd getInvJacobian(){return eigen_jacobian_pinv_;}
 		Eigen::MatrixXd getJacobian(){return eigen_jacobian_;}
+		Eigen::MatrixXd getSvdVector(){return svd_vect_;}
+		double getDamp(){return damp_;}
 		
 		void setMask(std::string mask_str);
 	
 	protected: // For internal use only (they use preallocated variables)
 		void PseudoInverse();
-		bool PseudoInverse(const Eigen::MatrixXd& a, Eigen::MatrixXd& result, double damp_max, double det_max, double epsilon);
 		void ComputeJac();
 		template<typename in_vector_t>
 		inline void ComputeFk(const in_vector_t& joints_pos)
@@ -102,7 +103,7 @@ class KDLKinematics
 		}
 		void setCartSize(int size);
 		void resizeCartAttributes(int size);
-	private:
+
 		std::string ros_node_name_;
 		std::string robot_description_;
 		std::string chain_root_, chain_tip_;
@@ -116,7 +117,7 @@ class KDLKinematics
 		boost::shared_ptr<KDL::ChainFkSolverPos_recursive> kdl_fk_solver_ptr_;
 		boost::shared_ptr<KDL::ChainJntToJacSolver> kdl_jacobian_solver_ptr_;
 		KDL::Frame kdl_end_effector_;
-		double damp_max_, det_max_, epsilon_, damp_, det_;
+		double damp_max_, epsilon_, damp_, svd_min_, svd_curr_;
 		int Ndof_, cart_size_;
 		boost::shared_ptr<svd_t> svd_;
 		Eigen::VectorXd svd_vect_;
