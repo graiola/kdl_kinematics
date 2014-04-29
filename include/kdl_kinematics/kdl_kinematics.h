@@ -78,7 +78,6 @@ class KDLKinematics
 				}
 		}
 
-		
 		void ComputeIk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& v_in, Eigen::Ref<Eigen::VectorXd> qdot_out);
 
 		int getNdof(){return Ndof_;}
@@ -108,7 +107,6 @@ class KDLKinematics
 		std::string robot_description_;
 		std::string chain_root_, chain_tip_;
 		boost::shared_ptr<ros::NodeHandle> ros_nh_ptr_;
-		KDL::Tree kdl_tree_;
 		KDL::Chain kdl_chain_;
 		KDL::JntArray kdl_joints_;
 		KDL::Jacobian kdl_jacobian_;

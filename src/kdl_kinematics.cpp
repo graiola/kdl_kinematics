@@ -8,7 +8,7 @@ using namespace Eigen;
 namespace kdl_kinematics {
 
 KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_max, double epsilon):chain_root_(chain_root),chain_tip_(chain_tip),damp_max_(damp_max),epsilon_(epsilon)
-{
+{	
 	assert(damp_max_ >= 0.0);
 	assert(epsilon_ >= 0.0);
 	
@@ -22,17 +22,28 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	ros_nh_ptr_ = boost::make_shared<NodeHandle> ("");
 	ros_nh_ptr_->param("robot_description", robot_description_, string());
 	
-	if (!kdl_parser::treeFromString(robot_description_, kdl_tree_)){
+	KDL::Tree* kdl_tree_ptr_tmp;
+	kdl_tree_ptr_tmp = new KDL::Tree();
+	
+	if (!kdl_parser::treeFromParam("robot_description", *kdl_tree_ptr_tmp)){
 		std::string err("Exception catched during kdl_kinematics initialization: impossible to retrain the robot description and to create the kdl tree");
 		//ROS_ERROR_STREAM(err);
 		throw std::runtime_error(err);
 	}
 	
-	if(!kdl_tree_.getChain(chain_root_,chain_tip_,kdl_chain_)){
+	if (!kdl_parser::treeFromString(robot_description_, *kdl_tree_ptr_tmp)){
+		std::string err("Exception catched during kdl_kinematics initialization: impossible to retrain the robot description and to create the kdl tree");
+		//ROS_ERROR_STREAM(err);
+		throw std::runtime_error(err);
+	}
+	
+	if(!kdl_tree_ptr_tmp->getChain(chain_root_,chain_tip_,kdl_chain_)){
 		std::string err("Exception catched during kdl_kinematics initialization: impossible to get the kdl chain from " + chain_root_ +" to " + chain_tip_);
 		//ROS_ERROR_STREAM(err);
 		throw std::runtime_error(err);
 	}
+	
+	delete kdl_tree_ptr_tmp; // It is no needed anymore
 	
 	kdl_jacobian_solver_ptr_ = boost::make_shared<ChainJntToJacSolver> (kdl_chain_);
 	kdl_fk_solver_ptr_ = boost::make_shared<ChainFkSolverPos_recursive> (kdl_chain_);
@@ -131,7 +142,6 @@ void KDLKinematics::resizeCartAttributes(int size)
 
 void KDLKinematics::PseudoInverse()
 {	
-
 	svd_->compute(eigen_jacobian_, ComputeThinU | ComputeThinV);
 	svd_vect_ = svd_->singularValues();
 	svd_min_ = svd_vect_.minCoeff();

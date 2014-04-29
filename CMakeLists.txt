@@ -143,6 +143,16 @@ install(DIRECTORY include/${PROJECT_NAME}/
   PATTERN ".svn" EXCLUDE
 )
 
+## Install the library and the headers in usr
+#set(LIB_INSTALL_DIR /usr/local/lib/${PROJECT_NAME})
+#set(INCLUDE_INSTALL_DIR /usr/local/include/${PROJECT_NAME})
+#install(TARGETS ${PROJECT_NAME} DESTINATION ${LIB_INSTALL_DIR})
+#install(DIRECTORY include/${PROJECT_NAME}/
+#  DESTINATION ${INCLUDE_INSTALL_DIR}
+#  FILES_MATCHING PATTERN "*.h"
+#  PATTERN ".svn" EXCLUDE
+#)
+
 ## Mark other files for installation (e.g. launch and bag files, etc.)
 # install(FILES
 #   # myfile1
