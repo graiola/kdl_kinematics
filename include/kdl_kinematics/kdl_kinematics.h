@@ -80,12 +80,12 @@ class KDLKinematics
 
 		void ComputeIk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& v_in, Eigen::Ref<Eigen::VectorXd> qdot_out);
 
-		int getNdof(){return Ndof_;}
-		
 		Eigen::MatrixXd getInvJacobian(){return eigen_jacobian_pinv_;}
 		Eigen::MatrixXd getJacobian(){return eigen_jacobian_;}
 		Eigen::MatrixXd getSvdVector(){return svd_vect_;}
+		int getNdof(){return Ndof_;}
 		double getDamp(){return damp_;}
+		KDL::Chain getChain(){return kdl_chain_;}
 		
 		void setMask(std::string mask_str);
 	
