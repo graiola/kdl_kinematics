@@ -98,7 +98,7 @@ void KDLKinematics::setMask(string mask_str)
 	if(n_tokens!=6){
 		ROS_INFO("Invalid mask format");
 		ROS_INFO("It will be used the default mask 1,1,1,1,1,1");
-		for (int i = 0; i<mask_.size(); i++) 
+		for (unsigned int i = 0; i<mask_.size(); i++) 
 			mask_[i] = 1;
 		return;
 	}
@@ -112,7 +112,7 @@ void KDLKinematics::setMask(string mask_str)
 			}
 			else
 				mask_[n_tokens] = 0;
-			std::cout << mask_[n_tokens] << std::endl;
+			//std::cout << mask_[n_tokens] << std::endl;
 			n_tokens++;
 		}	
 	}
@@ -166,7 +166,7 @@ void KDLKinematics::ComputeJac()
 	else
 	{// Apply the mask
 		int idx = 0;
-		for(int i = 0; i < mask_.size(); i++)
+		for(unsigned int i = 0; i < mask_.size(); i++)
 			 if(mask_[i])
 			 {
 				eigen_jacobian_.row(idx) = kdl_jacobian_.data.row(i);

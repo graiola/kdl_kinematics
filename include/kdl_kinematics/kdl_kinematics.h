@@ -55,7 +55,7 @@ class KDLKinematics
 			ComputeFk(joints_pos);
 			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos_tmp_);
 			int idx = 0;
-			for(int i = 0; i < mask_.size(); i++)
+			for(unsigned int i = 0; i < mask_.size(); i++)
 				if(mask_[i])
 				{
 					pose_pos[idx] = pose_pos_tmp_[i];
@@ -70,7 +70,7 @@ class KDLKinematics
 			ComputeFk(joints_pos);
 			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos_tmp_);
 			int idx = 0;
-			for(int i = 0; i < mask_.size(); i++)
+			for(unsigned int i = 0; i < mask_.size(); i++)
 				if(mask_[i])
 				{
 					pose_pos[idx] = pose_pos_tmp_[i];
@@ -84,7 +84,10 @@ class KDLKinematics
 		Eigen::MatrixXd getJacobian(){return eigen_jacobian_;}
 		Eigen::MatrixXd getSvdVector(){return svd_vect_;}
 		int getNdof(){return Ndof_;}
+		int getCartSize(){return cart_size_;}
 		double getDamp(){return damp_;}
+		int getMaskValue(const int idx){return mask_[idx];}
+		
 		KDL::Chain getChain(){return kdl_chain_;}
 		
 		void setMask(std::string mask_str);
