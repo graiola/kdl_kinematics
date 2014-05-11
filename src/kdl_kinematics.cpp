@@ -25,11 +25,11 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	KDL::Tree* kdl_tree_ptr_tmp;
 	kdl_tree_ptr_tmp = new KDL::Tree();
 	
-	if (!kdl_parser::treeFromParam("robot_description", *kdl_tree_ptr_tmp)){
+	/*if (!kdl_parser::treeFromParam("robot_description", *kdl_tree_ptr_tmp)){
 		std::string err("Exception catched during kdl_kinematics initialization: impossible to retrain the robot description and to create the kdl tree");
 		//ROS_ERROR_STREAM(err);
 		throw std::runtime_error(err);
-	}
+	}*/
 	
 	if (!kdl_parser::treeFromString(robot_description_, *kdl_tree_ptr_tmp)){
 		std::string err("Exception catched during kdl_kinematics initialization: impossible to retrain the robot description and to create the kdl tree");
