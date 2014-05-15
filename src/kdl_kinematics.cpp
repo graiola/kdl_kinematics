@@ -19,6 +19,16 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	init(argc, argv, ros_node_name_);
 	free (arg0);
 	
+
+	if(ros::master::check()){
+		ros_nh_ptr_ = boost::make_shared<NodeHandle> ("");
+	}
+	else{
+	    std::string err("Roscore not found");
+	    //ROS_ERROR_STREAM(err);
+	    throw std::runtime_error(err);
+	}
+
 	ros_nh_ptr_ = boost::make_shared<NodeHandle> ("");
 	ros_nh_ptr_->param("robot_description", robot_description_, string());
 	
