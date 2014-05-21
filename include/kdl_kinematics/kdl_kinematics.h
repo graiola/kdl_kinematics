@@ -187,10 +187,16 @@ class KDLClik: public KDLKinematics
 				else
 					desired_pose_ = desired_pose;
 				// Compute IK
-				v_ = gains_*(desired_pose_-actual_pose_); // TODO + cart_vel_cmd_
+				for (int i=0;i<cart_size_;i++){
+					v_[i]=0.0;
+					for (int j=0;j<cart_size_;j++)
+						v_[i]+=(gains_(i,j)*(desired_pose_[j]-actual_pose_[j]));
+				}		
+				//v_ = gains_*(desired_pose_-actual_pose_); // TODO + cart_vel_cmd_
 				KDLKinematics::ComputeIk(joints_pos,v_,qdot_);
 				// Integrate the joints velocities
-				q_out = qdot_ * dt_ + joints_pos;
+				for (int i=0;i<Ndof_;i++)
+					q_out[i] = qdot_[i] * dt_ + joints_pos[i];
 		}
 		
 	private:
