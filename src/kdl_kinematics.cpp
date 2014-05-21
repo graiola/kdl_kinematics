@@ -70,7 +70,7 @@ KDLKinematics::~KDLKinematics()
 {
 }
 
-void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
+/*void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
 {
 	assert(joints_pos.size() >= Ndof_);
 	assert(v_in.size() == cart_size_);
@@ -84,7 +84,7 @@ void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<c
 	PseudoInverse();
 	
 	qdot_out = eigen_jacobian_pinv_ * v_in;
-}
+}*/
 
 void KDLKinematics::setMask(string mask_str)
 {
@@ -167,27 +167,15 @@ void KDLKinematics::ComputeJac()
 	if(cart_size_ == 6)
 		eigen_jacobian_ = kdl_jacobian_.data;
 	else
-	{// Apply the mask
-		//int idx = 0;
-		//for(unsigned int i = 0; i < mask_.size(); i++)
-		//	 if(mask_[i]) //FIXME
-		//	 {
-		//		eigen_jacobian_.row(idx) = kdl_jacobian_.data.row(i);
-		//		idx++;
-		//	 }
-		
-		
 		ApplyMaskRowMatrix(kdl_jacobian_.data,eigen_jacobian_);
-		
-	}
 }
 
 void KDLKinematics::ApplyMaskIdentityMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
-		{
-			assert(in.rows() == in.cols()); // it is a square matrix
-			assert(in.rows() == mask_.size());
-			assert(out.rows() == out.cols()); // it is a square matrix
-			assert(out.rows() == cart_size_);
+{
+			//assert(in.rows() == in.cols()); // it is a square matrix
+			//assert(in.rows() == mask_.size());
+			//assert(out.rows() == out.cols()); // it is a square matrix
+			//assert(out.rows() == cart_size_);
 			mask_cnt_ = 0;
 			for(unsigned int i = 0; i < mask_.size(); i++)
 				if(getMaskValue(i))
@@ -199,8 +187,8 @@ void KDLKinematics::ApplyMaskIdentityMatrix(const Ref<const MatrixXd>& in, Ref<M
 
 void KDLKinematics::ApplyMaskRowMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
 {
-	assert(in.rows() == mask_.size());
-	assert(out.rows() == cart_size_);
+	//assert(in.rows() == mask_.size());
+	//assert(out.rows() == cart_size_);
 	mask_cnt_ = 0;
 	for(unsigned int i = 0; i < mask_.size(); i++)
 		if(getMaskValue(i))
@@ -212,8 +200,8 @@ void KDLKinematics::ApplyMaskRowMatrix(const Ref<const MatrixXd>& in, Ref<Matrix
 
 void KDLKinematics::ApplyMaskColMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
 {
-	assert(in.cols() == mask_.size());
-	assert(out.cols() == cart_size_);
+	//assert(in.cols() == mask_.size());
+	//assert(out.cols() == cart_size_);
 	mask_cnt_ = 0;
 	for(unsigned int i = 0; i < mask_.size(); i++)
 		if(getMaskValue(i))

@@ -53,6 +53,14 @@ void testInterfacesStd(KDLKinematics& kdl_kinematics, int cart_size){
 	for(int i = 0; i < pose_pos.size(); i++)
 		std::cout << "pose_pos["<<i<<"]: " << pose_pos[i] << std::endl;
 	
+	// Testing IK interface
+	ROS_INFO("TESTING: ComputeIk(joints_pos,v_in,qdot_out);");
+	std::vector<vector_t> v_in(cart_size,0.0); // x y z r p y
+	std::vector<vector_t> qdot_out(kdl_kinematics.getNdof(),0.0);
+	kdl_kinematics.ComputeIk(joints_pos,v_in,qdot_out);
+	for(int i = 0; i < qdot_out.size(); i++)
+		std::cout << "qdot_out["<<i<<"]: " << qdot_out[i] << std::endl;
+	
 	ROS_INFO("TESTING: ComputeFk(joints_pos,position,orientation)");
 	Eigen::Vector3d position;
 	Eigen::Matrix3d orientation;
