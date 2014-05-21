@@ -66,10 +66,6 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	ros_nh_ptr_->shutdown();
 }
 
-KDLKinematics::~KDLKinematics()
-{
-}
-
 /*void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
 {
 	assert(joints_pos.size() >= Ndof_);

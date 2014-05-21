@@ -35,7 +35,6 @@ class KDLKinematics
 {
 	public:
 		KDLKinematics(std::string chain_root, std::string chain_tip, double damp_max = 0.1, double epsilon = 0.01);
-		~KDLKinematics();
 		template<typename joints_vector_t>
 		inline void ComputeFk(const joints_vector_t& joints_pos, Eigen::Ref<Eigen::Vector3d> position, Eigen::Ref<Eigen::Matrix3d> orientation)
 		{
