@@ -35,9 +35,8 @@ class KDLKinematics
 {
 	public:
 		KDLKinematics(std::string chain_root, std::string chain_tip, double damp_max = 0.1, double epsilon = 0.01);
-		~KDLKinematics();
-		template<typename joints_vector_t>
-		inline void ComputeFk(const joints_vector_t& joints_pos, Eigen::Ref<Eigen::Vector3d> position, Eigen::Ref<Eigen::Matrix3d> orientation)
+		
+		inline void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::Vector3d> position, Eigen::Ref<Eigen::Matrix3d> orientation)
 		{
 			ComputeFk(joints_pos);
 			for(int i = 0; i<3; i++){
@@ -46,40 +45,16 @@ class KDLKinematics
 					orientation(i,j) = kdl_end_effector_.M(i,j);
 			}
 		}
-		template<typename joints_vector_t, typename pose_vector_t>
-		inline void ComputeFk(const joints_vector_t& joints_pos, pose_vector_t& pose_pos)
+		inline void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::VectorXd> pose_pos)
 		{
 			//assert(pose_pos.size() == cart_size_);
 			ComputeFk(joints_pos);
 			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos_tmp_);
 			ApplyMaskVector(pose_pos_tmp_,pose_pos);
 		}
-		//void ComputeIk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& v_in, Eigen::Ref<Eigen::VectorXd> qdot_out);
+		void ComputeIk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& v_in, Eigen::Ref<Eigen::VectorXd> qdot_out);
 		
-		template<typename joints_vector_t, typename v_vector_t, typename qdot_vector_t>
-		inline void ComputeIk(const joints_vector_t& joints_pos, const v_vector_t& v_in, qdot_vector_t& qdot_out)
-		{
-			//assert(joints_pos.size() >= Ndof_);
-			//assert(v_in.size() == cart_size_);
-			//assert(qdot_out.size() == Ndof_);
-			
-			for(int i = 0; i<Ndof_; i++)
-				kdl_joints_(i) = joints_pos[i];
-			
-			ComputeJac();
-			PseudoInverse();
-
-			//qdot_out = eigen_jacobian_pinv_ * v_in;
-
-			for (int i=0;i<Ndof_;i++){
-				qdot_out[i]=0.0;
-				for (int j=0;j<cart_size_;j++)
-					qdot_out[i]+=(eigen_jacobian_pinv_(i,j)*v_in[j]);
-			 }
-		}
-		
-		template<typename in_vector_t, typename out_vector_t>
-		inline void ApplyMaskVector(const in_vector_t& in, out_vector_t& out)
+		inline void ApplyMaskVector(const Eigen::Ref<const Eigen::VectorXd>& in, Eigen::Ref<Eigen::VectorXd> out)
 		{
 			//assert(in.size() == mask_.size());
 			//assert(out.size() == cart_size_);
@@ -107,8 +82,7 @@ class KDLKinematics
 	protected: // For internal use only (they use preallocated variables)
 		void PseudoInverse();
 		void ComputeJac();
-		template<typename joints_vector_t>
-		inline void ComputeFk(const joints_vector_t& joints_pos)
+		inline void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos)
 		{
 			//assert(joints_pos.size() >= Ndof_);
 			for(int i = 0; i<Ndof_; i++)
@@ -133,9 +107,8 @@ class KDLKinematics
 		double damp_max_, epsilon_, damp_, svd_min_, svd_curr_, mask_cnt_;
 		int Ndof_, cart_size_;
 		boost::shared_ptr<svd_t> svd_;
-		Eigen::VectorXd svd_vect_;
+		Eigen::VectorXd svd_vect_, pose_pos_tmp_;
 		mask_t mask_;
-		std::vector<double> pose_pos_tmp_;
 };
 
 class KDLClik: public KDLKinematics
@@ -173,30 +146,22 @@ class KDLClik: public KDLKinematics
 		
 		const Eigen::MatrixXd getGains(){return gains_;}
 		
-		template<typename joints_vector_t>
-		inline void clikStatusStep(const joints_vector_t& joints_pos){
+		inline void clikStatusStep(const Eigen::Ref<const Eigen::VectorXd>& joints_pos){
 				// Compute FK
 				KDLKinematics::ComputeFk(joints_pos,actual_pose_);
 		}
 		
-		template<typename joints_vector_t, typename pose_vector_t, typename q_vector_t>
-		inline void clikCommandStep(const joints_vector_t& joints_pos, const pose_vector_t& desired_pose, q_vector_t& q_out){
+		inline void clikCommandStep(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& desired_pose, Eigen::Ref<Eigen::VectorXd> q_out){
 				if(desired_pose.size() == 6){
 					KDLKinematics::ApplyMaskVector(desired_pose,desired_pose_);
 				}
 				else
 					desired_pose_ = desired_pose;
 				// Compute IK
-				for (int i=0;i<cart_size_;i++){
-					v_[i]=0.0;
-					for (int j=0;j<cart_size_;j++)
-						v_[i]+=(gains_(i,j)*(desired_pose_[j]-actual_pose_[j]));
-				}		
-				//v_ = gains_*(desired_pose_-actual_pose_); // TODO + cart_vel_cmd_
+				v_ = gains_*(desired_pose_-actual_pose_); // TODO + cart_vel_cmd_
 				KDLKinematics::ComputeIk(joints_pos,v_,qdot_);
 				// Integrate the joints velocities
-				for (int i=0;i<Ndof_;i++)
-					q_out[i] = qdot_[i] * dt_ + joints_pos[i];
+				q_out = qdot_ * dt_ + joints_pos;
 		}
 		
 	private:

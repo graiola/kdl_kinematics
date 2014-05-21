@@ -39,7 +39,7 @@ void testInterfacesEigen(KDLKinematics& kdl_kinematics, int cart_size){
 	ROS_INFO_STREAM("jac_pinv:\n" << jac_pinv);
 }
 
-void testInterfacesStd(KDLKinematics& kdl_kinematics, int cart_size){
+/*void testInterfacesStd(KDLKinematics& kdl_kinematics, int cart_size){
 	
 	// Testing FK interface
 	ROS_INFO("TESTING: ComputeFk(joints_pos,pose_pos)");
@@ -66,7 +66,7 @@ void testInterfacesStd(KDLKinematics& kdl_kinematics, int cart_size){
 	Eigen::Matrix3d orientation;
 	kdl_kinematics.ComputeFk(joints_pos,position,orientation);
 	ROS_INFO_STREAM("RESULT:\n position:\n" << position << "\n" << "orientation:\n" << orientation);
-}
+}*/
 
 void testMask(KDLKinematics& kdl_kinematics){
 	
@@ -85,7 +85,7 @@ int main(int argc, char *argv[])
 		ROS_INFO("EIGEN INTERFACE");
 		testInterfacesEigen(kdl_kinematics,6);
 		ROS_INFO("STD INTERFACE");
-		testInterfacesStd(kdl_kinematics,6);
+		//testInterfacesStd(kdl_kinematics,6);
 		ROS_INFO("TEST MASK");
 		testMask(kdl_kinematics);
 		testInterfacesEigen(kdl_kinematics,2);

@@ -66,25 +66,17 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	ros_nh_ptr_->shutdown();
 }
 
-KDLKinematics::~KDLKinematics()
+void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
 {
-}
-
-/*void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
-{
-	assert(joints_pos.size() >= Ndof_);
-	assert(v_in.size() == cart_size_);
-	assert(qdot_out.size() == Ndof_);
-	
+	//assert(joints_pos.size() >= Ndof_);
+	//assert(v_in.size() == cart_size_);
+	//assert(qdot_out.size() == Ndof_);
 	for(int i = 0; i<Ndof_; i++)
 		kdl_joints_(i) = joints_pos(i);
-	
 	ComputeJac();
-	
 	PseudoInverse();
-	
 	qdot_out = eigen_jacobian_pinv_ * v_in;
-}*/
+}
 
 void KDLKinematics::setMask(string mask_str)
 {
