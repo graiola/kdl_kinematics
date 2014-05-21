@@ -132,9 +132,8 @@ class KDLKinematics
 		double damp_max_, epsilon_, damp_, svd_min_, svd_curr_, mask_cnt_;
 		int Ndof_, cart_size_;
 		boost::shared_ptr<svd_t> svd_;
-		Eigen::VectorXd svd_vect_;
+		Eigen::VectorXd svd_vect_, pose_pos_tmp_;
 		mask_t mask_;
-		std::vector<double> pose_pos_tmp_;
 };
 
 class KDLClik: public KDLKinematics
