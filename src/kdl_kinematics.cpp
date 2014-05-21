@@ -12,7 +12,7 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	assert(damp_max_ >= 0.0);
 	assert(epsilon_ >= 0.0);
 	
-	ros_node_name_ = "kdl_kinematics"; // Fix to move in the interface, so I can generate different nodes with different names for each kinematic chain.
+	ros_node_name_ = "kdl_kinematics";
 	int argc = 1;
 	char* arg0 = strdup(ros_node_name_.c_str());
 	char* argv[] = {arg0, 0};
@@ -34,12 +34,6 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	
 	KDL::Tree* kdl_tree_ptr_tmp;
 	kdl_tree_ptr_tmp = new KDL::Tree();
-	
-	/*if (!kdl_parser::treeFromParam("robot_description", *kdl_tree_ptr_tmp)){
-		std::string err("Exception catched during kdl_kinematics initialization: impossible to retrain the robot description and to create the kdl tree");
-		//ROS_ERROR_STREAM(err);
-		throw std::runtime_error(err);
-	}*/
 	
 	if (!kdl_parser::treeFromString(robot_description_, *kdl_tree_ptr_tmp)){
 		std::string err("Exception catched during kdl_kinematics initialization: impossible to retrain the robot description and to create the kdl tree");
@@ -141,13 +135,12 @@ void KDLKinematics::resizeCartAttributes(int size)
 {
 	eigen_jacobian_.resize(size,Ndof_);
 	eigen_jacobian_pinv_.resize(Ndof_,size);
-	svd_.reset(new svd_t(size,Ndof_)); // FIX, prb this is not rt safe
+	svd_.reset(new svd_t(size,Ndof_)); // FIXME prb this is not rt safe
 	svd_vect_.resize(size);
 	// Clear
 	eigen_jacobian_.fill(0.0);
 	eigen_jacobian_pinv_.fill(0.0);
 	svd_vect_.fill(0.0);
-	
 }
 
 void KDLKinematics::PseudoInverse()
@@ -175,16 +168,59 @@ void KDLKinematics::ComputeJac()
 		eigen_jacobian_ = kdl_jacobian_.data;
 	else
 	{// Apply the mask
-		int idx = 0;
-		for(unsigned int i = 0; i < mask_.size(); i++)
-			 if(mask_[i])
-			 {
-				eigen_jacobian_.row(idx) = kdl_jacobian_.data.row(i);
-				idx++;
-			 }
-			
+		//int idx = 0;
+		//for(unsigned int i = 0; i < mask_.size(); i++)
+		//	 if(mask_[i]) //FIXME
+		//	 {
+		//		eigen_jacobian_.row(idx) = kdl_jacobian_.data.row(i);
+		//		idx++;
+		//	 }
+		
+		
+		ApplyMaskRowMatrix(kdl_jacobian_.data,eigen_jacobian_);
+		
 	}
 }
 
+void KDLKinematics::ApplyMaskIdentityMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
+		{
+			assert(in.rows() == in.cols()); // it is a square matrix
+			assert(in.rows() == mask_.size());
+			assert(out.rows() == out.cols()); // it is a square matrix
+			assert(out.rows() == cart_size_);
+			mask_cnt_ = 0;
+			for(unsigned int i = 0; i < mask_.size(); i++)
+				if(getMaskValue(i))
+				{
+					out(mask_cnt_,mask_cnt_) = in(i,i);
+					mask_cnt_++;
+				}
 }
 
+void KDLKinematics::ApplyMaskRowMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
+{
+	assert(in.rows() == mask_.size());
+	assert(out.rows() == cart_size_);
+	mask_cnt_ = 0;
+	for(unsigned int i = 0; i < mask_.size(); i++)
+		if(getMaskValue(i))
+		{
+			out.row(mask_cnt_) = in.row(i);
+			mask_cnt_++;
+		}
+}
+
+void KDLKinematics::ApplyMaskColMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
+{
+	assert(in.cols() == mask_.size());
+	assert(out.cols() == cart_size_);
+	mask_cnt_ = 0;
+	for(unsigned int i = 0; i < mask_.size(); i++)
+		if(getMaskValue(i))
+		{
+			out.col(mask_cnt_) = in.col(i);
+			mask_cnt_++;
+		}
+}
+
+}

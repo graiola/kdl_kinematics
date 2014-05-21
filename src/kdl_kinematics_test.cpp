@@ -12,6 +12,10 @@ void testInterfacesEigen(KDLKinematics& kdl_kinematics, int cart_size){
 	ROS_INFO("TESTING: ComputeFk(joints_pos,pose_pos)");
 	Eigen::VectorXd joints_pos = Eigen::VectorXd::Ones(kdl_kinematics.getNdof()) * 0.4;
 	Eigen::VectorXd pose_pos(cart_size); // x y z r p y
+	
+	//std::cout<<"Pointer outside for pose_pos: "<<&pose_pos<<std::endl;
+	//std::cout<<"Pointer outside for joints_pos: "<<&joints_pos<<std::endl;
+	
 	kdl_kinematics.ComputeFk(joints_pos,pose_pos);
 	ROS_INFO_STREAM("RESULT:\n pose_pos:\n" << pose_pos);
 	
@@ -41,6 +45,10 @@ void testInterfacesStd(KDLKinematics& kdl_kinematics, int cart_size){
 	ROS_INFO("TESTING: ComputeFk(joints_pos,pose_pos)");
 	std::vector<vector_t> joints_pos = {0.4,0.4,0.4,0.4,0.4,0.4,0.4};
 	std::vector<vector_t> pose_pos(cart_size); // x y z r p y
+	
+	//std::cout<<"Pointer outside for pose_pos: "<<&pose_pos<<std::endl;
+	//std::cout<<"Pointer outside for joints_pos: "<<&joints_pos<<std::endl;
+	
 	kdl_kinematics.ComputeFk(joints_pos,pose_pos);
 	for(int i = 0; i < pose_pos.size(); i++)
 		std::cout << "pose_pos["<<i<<"]: " << pose_pos[i] << std::endl;
