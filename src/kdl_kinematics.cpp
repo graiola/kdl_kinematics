@@ -16,12 +16,12 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	int argc = 1;
 	char* arg0 = strdup(ros_node_name_.c_str());
 	char* argv[] = {arg0, 0};
-	init(argc, argv, ros_node_name_);
+	init(argc, argv, ros_node_name_, init_options::NoSigintHandler);
 	free (arg0);
 	
-
 	if(ros::master::check()){
-		ros_nh_ptr_ = boost::make_shared<NodeHandle> ("");
+		//ros_nh_ptr_ = boost::make_shared<NodeHandle> ("");
+		ros_nh_ptr_ = new NodeHandle("");
 	}
 	else{
 	    std::string err("Roscore not found");
@@ -29,7 +29,6 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	    throw std::runtime_error(err);
 	}
 
-	ros_nh_ptr_ = boost::make_shared<NodeHandle> ("");
 	ros_nh_ptr_->param("robot_description", robot_description_, string());
 	
 	KDL::Tree* kdl_tree_ptr_tmp;
@@ -64,18 +63,28 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	setCartSize(6); // Default x y z r p y
 	
 	ros_nh_ptr_->shutdown();
+	//delete ros_nh_ptr_;
 }
 
 void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
 {
-	//assert(joints_pos.size() >= Ndof_);
+	assert(joints_pos.size() >= Ndof_);
 	//assert(v_in.size() == cart_size_);
-	//assert(qdot_out.size() == Ndof_);
+	assert(qdot_out.size() == Ndof_);
 	for(int i = 0; i<Ndof_; i++)
 		kdl_joints_(i) = joints_pos(i);
 	ComputeJac();
 	PseudoInverse();
-	qdot_out = eigen_jacobian_pinv_ * v_in;
+	if(v_in.size() == 6){
+		ApplyMaskVector(v_in,pose_vel_tmp_);
+	}
+	else
+	{	
+		assert(v_in.size() == cart_size_);
+		pose_vel_tmp_ = v_in;
+	}
+	
+	qdot_out = eigen_jacobian_pinv_ * pose_vel_tmp_;
 }
 
 void KDLKinematics::setMask(string mask_str)
@@ -129,10 +138,12 @@ void KDLKinematics::resizeCartAttributes(int size)
 	eigen_jacobian_pinv_.resize(Ndof_,size);
 	svd_.reset(new svd_t(size,Ndof_)); // FIXME prb this is not rt safe
 	svd_vect_.resize(size);
+	pose_vel_tmp_.resize(size);
 	// Clear
 	eigen_jacobian_.fill(0.0);
 	eigen_jacobian_pinv_.fill(0.0);
 	svd_vect_.fill(0.0);
+	pose_vel_tmp_.fill(0.0);
 }
 
 void KDLKinematics::PseudoInverse()
@@ -164,10 +175,10 @@ void KDLKinematics::ComputeJac()
 
 void KDLKinematics::ApplyMaskIdentityMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
 {
-			//assert(in.rows() == in.cols()); // it is a square matrix
-			//assert(in.rows() == mask_.size());
-			//assert(out.rows() == out.cols()); // it is a square matrix
-			//assert(out.rows() == cart_size_);
+			assert(in.rows() == in.cols()); // it is a square matrix
+			assert(in.rows() == static_cast<int>(mask_.size()));
+			assert(out.rows() == out.cols()); // it is a square matrix
+			assert(out.rows() == cart_size_);
 			mask_cnt_ = 0;
 			for(unsigned int i = 0; i < mask_.size(); i++)
 				if(getMaskValue(i))
@@ -179,8 +190,8 @@ void KDLKinematics::ApplyMaskIdentityMatrix(const Ref<const MatrixXd>& in, Ref<M
 
 void KDLKinematics::ApplyMaskRowMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
 {
-	//assert(in.rows() == mask_.size());
-	//assert(out.rows() == cart_size_);
+	assert(in.rows() == static_cast<int>(mask_.size()));
+	assert(out.rows() == cart_size_);
 	mask_cnt_ = 0;
 	for(unsigned int i = 0; i < mask_.size(); i++)
 		if(getMaskValue(i))
@@ -192,8 +203,8 @@ void KDLKinematics::ApplyMaskRowMatrix(const Ref<const MatrixXd>& in, Ref<Matrix
 
 void KDLKinematics::ApplyMaskColMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
 {
-	//assert(in.cols() == mask_.size());
-	//assert(out.cols() == cart_size_);
+	assert(in.cols() == static_cast<int>(mask_.size()));
+	assert(out.cols() == cart_size_);
 	mask_cnt_ = 0;
 	for(unsigned int i = 0; i < mask_.size(); i++)
 		if(getMaskValue(i))

@@ -36,6 +36,8 @@ class KDLKinematics
 	public:
 		KDLKinematics(std::string chain_root, std::string chain_tip, double damp_max = 0.1, double epsilon = 0.01);
 		
+		~KDLKinematics(){if(ros_nh_ptr_!=NULL){delete ros_nh_ptr_;}}
+		
 		inline void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::Vector3d> position, Eigen::Ref<Eigen::Matrix3d> orientation)
 		{
 			ComputeFk(joints_pos);
@@ -50,14 +52,22 @@ class KDLKinematics
 			//assert(pose_pos.size() == cart_size_);
 			ComputeFk(joints_pos);
 			KDLFRAME2VECTOR(kdl_end_effector_,pose_pos_tmp_);
-			ApplyMaskVector(pose_pos_tmp_,pose_pos);
+			if(pose_pos.size() == 6){
+				pose_pos = pose_pos_tmp_;
+			}
+			else
+			{
+				assert(pose_pos.size() == cart_size_);
+				ApplyMaskVector(pose_pos_tmp_,pose_pos);
+			}
+			//ApplyMaskVector(pose_pos_tmp_,pose_pos);
 		}
 		void ComputeIk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& v_in, Eigen::Ref<Eigen::VectorXd> qdot_out);
 		
 		inline void ApplyMaskVector(const Eigen::Ref<const Eigen::VectorXd>& in, Eigen::Ref<Eigen::VectorXd> out)
 		{
-			//assert(in.size() == mask_.size());
-			//assert(out.size() == cart_size_);
+			assert(in.size() == static_cast<int>(mask_.size()));
+			assert(out.size() == cart_size_);
 			mask_cnt_ = 0;
 			for(unsigned int i = 0; i < mask_.size(); i++)
 				if(getMaskValue(i))
@@ -84,7 +94,7 @@ class KDLKinematics
 		void ComputeJac();
 		inline void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos)
 		{
-			//assert(joints_pos.size() >= Ndof_);
+			assert(joints_pos.size() >= Ndof_);
 			for(int i = 0; i<Ndof_; i++)
 				kdl_joints_(i) = joints_pos[i];
 			kdl_fk_solver_ptr_->JntToCart(kdl_joints_,kdl_end_effector_);
@@ -95,7 +105,8 @@ class KDLKinematics
 		std::string ros_node_name_;
 		std::string robot_description_;
 		std::string chain_root_, chain_tip_;
-		boost::shared_ptr<ros::NodeHandle> ros_nh_ptr_;
+		ros::NodeHandle* ros_nh_ptr_;
+		//boost::shared_ptr<ros::NodeHandle> ros_nh_ptr_;
 		KDL::Chain kdl_chain_;
 		KDL::JntArray kdl_joints_;
 		KDL::Jacobian kdl_jacobian_;
@@ -107,7 +118,7 @@ class KDLKinematics
 		double damp_max_, epsilon_, damp_, svd_min_, svd_curr_, mask_cnt_;
 		int Ndof_, cart_size_;
 		boost::shared_ptr<svd_t> svd_;
-		Eigen::VectorXd svd_vect_, pose_pos_tmp_;
+		Eigen::VectorXd svd_vect_, pose_pos_tmp_, pose_vel_tmp_;
 		mask_t mask_;
 };
 
@@ -116,9 +127,9 @@ class KDLClik: public KDLKinematics
 	public:
 		KDLClik(std::string root, std::string end_effector, double damp_max, double epsilon, Eigen::MatrixXd gains, double dt):KDLKinematics(root,end_effector,damp_max,epsilon)
 		{
-			//assert(gains.rows() == 6);
-			//assert(gains.cols() == 6);
-			//assert(dt > 0.0);
+			assert(gains.rows() == 6);
+			assert(gains.cols() == 6);
+			assert(dt > 0.0);
 			gains_ = gains;
 			dt_ = dt;
 			qdot_.resize(Ndof_);
@@ -151,12 +162,28 @@ class KDLClik: public KDLKinematics
 				KDLKinematics::ComputeFk(joints_pos,actual_pose_);
 		}
 		
+		inline void clikStatusStep(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::VectorXd> actual_pose){
+				// Compute FK
+				KDLKinematics::ComputeFk(joints_pos,actual_pose);
+				if(actual_pose.size() == 6){
+					KDLKinematics::ApplyMaskVector(actual_pose,actual_pose_);
+				}
+				else
+				{
+					assert(actual_pose.size() == cart_size_);
+					actual_pose_ = actual_pose;
+				}
+		}
+		
 		inline void clikCommandStep(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& desired_pose, Eigen::Ref<Eigen::VectorXd> q_out){
 				if(desired_pose.size() == 6){
 					KDLKinematics::ApplyMaskVector(desired_pose,desired_pose_);
 				}
 				else
+				{
+					assert(desired_pose.size() == cart_size_);
 					desired_pose_ = desired_pose;
+				}
 				// Compute IK
 				v_ = gains_*(desired_pose_-actual_pose_); // TODO + cart_vel_cmd_
 				KDLKinematics::ComputeIk(joints_pos,v_,qdot_);
