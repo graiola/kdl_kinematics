@@ -62,6 +62,7 @@ class KDLKinematics
 			}
 			//ApplyMaskVector(pose_pos_tmp_,pose_pos);
 		}
+		void ComputeFkDot(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& qdot_in, Eigen::Ref<Eigen::VectorXd> v_out);
 		void ComputeIk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& v_in, Eigen::Ref<Eigen::VectorXd> qdot_out);
 		
 		inline void ApplyMaskVector(const Eigen::Ref<const Eigen::VectorXd>& in, Eigen::Ref<Eigen::VectorXd> out)

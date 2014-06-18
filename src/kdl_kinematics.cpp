@@ -87,6 +87,27 @@ void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<c
 	qdot_out = eigen_jacobian_pinv_ * pose_vel_tmp_;
 }
 
+void KDLKinematics::ComputeFkDot(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& qdot_in, Ref<VectorXd> v_out)
+{
+	assert(joints_pos.size() >= Ndof_);
+	assert(qdot_in.size() >= Ndof_);
+	assert(v_out.size() == cart_size_);
+
+        for(int i = 0; i<Ndof_; i++)
+            kdl_joints_(i) = joints_pos[i];
+
+        ComputeJac();
+
+        //if(v_out.size() == cart_size_){
+        v_out = eigen_jacobian_ * qdot_in;
+        //}
+        //else
+        //{
+
+        //}
+        //ApplyMaskVector(pose_pos_tmp_,pose_pos);
+}
+
 void KDLKinematics::setMask(string mask_str)
 {
 	int n_tokens = 0;
@@ -175,17 +196,17 @@ void KDLKinematics::ComputeJac()
 
 void KDLKinematics::ApplyMaskIdentityMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
 {
-			assert(in.rows() == in.cols()); // it is a square matrix
-			assert(in.rows() == static_cast<int>(mask_.size()));
-			assert(out.rows() == out.cols()); // it is a square matrix
-			assert(out.rows() == cart_size_);
-			mask_cnt_ = 0;
-			for(unsigned int i = 0; i < mask_.size(); i++)
-				if(getMaskValue(i))
-				{
-					out(mask_cnt_,mask_cnt_) = in(i,i);
-					mask_cnt_++;
-				}
+	assert(in.rows() == in.cols()); // it is a square matrix
+	assert(in.rows() == static_cast<int>(mask_.size()));
+	assert(out.rows() == out.cols()); // it is a square matrix
+	assert(out.rows() == cart_size_);
+	mask_cnt_ = 0;
+	for(unsigned int i = 0; i < mask_.size(); i++)
+		if(getMaskValue(i))
+		{
+			out(mask_cnt_,mask_cnt_) = in(i,i);
+			mask_cnt_++;
+		}
 }
 
 void KDLKinematics::ApplyMaskRowMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
