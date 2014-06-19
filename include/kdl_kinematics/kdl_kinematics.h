@@ -35,7 +35,6 @@ class KDLKinematics
 {
 	public:
 		KDLKinematics(std::string chain_root, std::string chain_tip, double damp_max = 0.1, double epsilon = 0.01);
-		KDLKinematics(const KDLKinematics& copy);
 		
 		~KDLKinematics(){if(ros_nh_ptr_!=NULL){delete ros_nh_ptr_;}}
 		
@@ -137,8 +136,6 @@ class KDLClik: public KDLKinematics
 			qdot_.resize(Ndof_);
 			qdot_.fill(0.0);
 		}
-		
-		KDLClik(const KDLClik& copy);
 		
 		void setMask(std::string mask_str)
 		{
