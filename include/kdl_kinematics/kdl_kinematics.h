@@ -81,6 +81,8 @@ class KDLKinematics
 		void ApplyMaskRowMatrix(const Eigen::Ref<const Eigen::MatrixXd>& in, Eigen::Ref<Eigen::MatrixXd> out);
 		void ApplyMaskColMatrix(const Eigen::Ref<const Eigen::MatrixXd>& in, Eigen::Ref<Eigen::MatrixXd> out);
 		
+		void ComputeJac(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::MatrixXd> jacobian);
+
 		Eigen::MatrixXd getInvJacobian(){return eigen_jacobian_pinv_;}
 		Eigen::MatrixXd getJacobian(){return eigen_jacobian_;}
 		Eigen::MatrixXd getSvdVector(){return svd_vect_;}

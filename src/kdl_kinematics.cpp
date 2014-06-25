@@ -194,6 +194,18 @@ void KDLKinematics::ComputeJac()
 		ApplyMaskRowMatrix(kdl_jacobian_.data,eigen_jacobian_);
 }
 
+void KDLKinematics::ComputeJac(const Ref<const VectorXd>& joints_pos, Ref<MatrixXd> jacobian)
+{
+        assert(joints_pos.size() >= Ndof_);
+
+        for(int i = 0; i<Ndof_; i++)
+            kdl_joints_(i) = joints_pos[i];
+
+        ComputeJac();
+
+        jacobian = eigen_jacobian_;
+}
+
 void KDLKinematics::ApplyMaskIdentityMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
 {
 	assert(in.rows() == in.cols()); // it is a square matrix
