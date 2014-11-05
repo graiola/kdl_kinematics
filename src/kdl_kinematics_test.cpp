@@ -1,5 +1,10 @@
 #include "kdl_kinematics/kdl_kinematics.h"
 
+////////// Eigen
+#include <eigen3/Eigen/Core>
+#include <eigen3/Eigen/SVD>
+#include <eigen3/Eigen/Geometry>
+
 using namespace kdl_kinematics;
 
 // Note: To run this test the meka's robot_description should be correctly loaded on the ros parameter server
@@ -75,6 +80,8 @@ void testMask(KDLKinematics& kdl_kinematics){
 
 int main(int argc, char *argv[])
 {
+	ros::init(argc, argv, "kdl_kinematics_test"); //Init ROS
+  
 	// How to create the object:
 	std::string end_effector_name = "palm_right";
 	std::string root_name = "T0";
@@ -84,7 +91,7 @@ int main(int argc, char *argv[])
 		KDLKinematics kdl_kinematics(root_name,end_effector_name);
 		ROS_INFO("EIGEN INTERFACE");
 		testInterfacesEigen(kdl_kinematics,6);
-		ROS_INFO("STD INTERFACE");
+		//ROS_INFO("STD INTERFACE");
 		//testInterfacesStd(kdl_kinematics,6);
 		ROS_INFO("TEST MASK");
 		testMask(kdl_kinematics);

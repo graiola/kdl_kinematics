@@ -4,10 +4,13 @@
 ////////// ROS
 #include "ros/ros.h"
 
+#define EIGEN_RUNTIME_NO_MALLOC
+
 ////////// Eigen
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/SVD>
 #include <eigen3/Eigen/Geometry>
+#include <eigen3/Eigen/Dense>
 
 ////////// KDL
 #include <kdl/chain.hpp>
@@ -115,6 +118,8 @@ class KDLKinematics
 		KDL::Jacobian kdl_jacobian_;
 		Eigen::MatrixXd eigen_jacobian_;
 		Eigen::MatrixXd eigen_jacobian_pinv_;
+		Eigen::MatrixXd eigen_jacobian_pinv_tmp_;
+		Eigen::MatrixXd matrixU_t_, matrixV_;
 		boost::shared_ptr<KDL::ChainFkSolverPos_recursive> kdl_fk_solver_ptr_;
 		boost::shared_ptr<KDL::ChainJntToJacSolver> kdl_jacobian_solver_ptr_;
 		KDL::Frame kdl_end_effector_;
