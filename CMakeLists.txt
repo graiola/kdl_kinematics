@@ -16,6 +16,12 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(orocos_kdl REQUIRED)
 find_package(Boost REQUIRED)
 
+
+# Define macros to check for real time requirements
+if(REALTIME_CHECKS)
+   add_definitions(-DREALTIME_CHECKS)
+endif()
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 

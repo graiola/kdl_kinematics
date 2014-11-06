@@ -4,13 +4,21 @@
 ////////// ROS
 #include "ros/ros.h"
 
-#define EIGEN_RUNTIME_NO_MALLOC
+#ifdef REALTIME_CHECKS
+  #define EIGEN_RUNTIME_NO_MALLOC
+  #define ENTERING_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(false); } while (0) 
+  #define EXITING_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(true); } while (0) 
+#else
+  #define ENTERING_REAL_TIME_CRITICAL_CODE() do {  } while (0) 
+  #define EXITING_REAL_TIME_CRITICAL_CODE() do {  } while (0) 
+#endif
 
 ////////// Eigen
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/SVD>
 #include <eigen3/Eigen/Geometry>
 #include <eigen3/Eigen/Dense>
+
 
 ////////// KDL
 #include <kdl/chain.hpp>
@@ -99,11 +107,12 @@ class KDLKinematics
 		void PseudoInverse();
 		void ComputeJac();
 		inline void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos)
-		{
+		{	ENTERING_REAL_TIME_CRITICAL_CODE();
 			assert(joints_pos.size() >= Ndof_);
 			for(int i = 0; i<Ndof_; i++)
 				kdl_joints_(i) = joints_pos[i];
 			kdl_fk_solver_ptr_->JntToCart(kdl_joints_,kdl_end_effector_);
+			EXITING_REAL_TIME_CRITICAL_CODE();
 		}
 		void setCartSize(int size);
 		void resizeCartAttributes(int size);
@@ -142,6 +151,18 @@ class KDLClik: public KDLKinematics
 			dt_ = dt;
 			qdot_.resize(Ndof_);
 			qdot_.fill(0.0);
+			
+			// Resizes
+			v_.resize(6);
+			v_tmp_.resize(cart_size_);
+			actual_pose_.resize(6);
+			desired_pose_.resize(6);
+			// Clear
+			v_.fill(0.0);
+			v_tmp_.fill(0.0);
+			actual_pose_.fill(0.0);
+			desired_pose_.fill(0.0);
+			
 		}
 		
 		void setMask(std::string mask_str)
@@ -155,10 +176,12 @@ class KDLClik: public KDLKinematics
 			ApplyMaskIdentityMatrix(gains_tmp_,gains_);
 			// Resizes
 			v_.resize(cart_size_);
+			v_tmp_.resize(cart_size_);
 			actual_pose_.resize(cart_size_);
 			desired_pose_.resize(cart_size_);
 			// Clear
 			v_.fill(0.0);
+			v_tmp_.fill(0.0);
 			actual_pose_.fill(0.0);
 			desired_pose_.fill(0.0);
 		}
@@ -167,11 +190,14 @@ class KDLClik: public KDLKinematics
 		
 		inline void clikStatusStep(const Eigen::Ref<const Eigen::VectorXd>& joints_pos){
 				// Compute FK
+				ENTERING_REAL_TIME_CRITICAL_CODE();
 				KDLKinematics::ComputeFk(joints_pos,actual_pose_);
+				EXITING_REAL_TIME_CRITICAL_CODE();
 		}
 		
 		inline void clikStatusStep(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::VectorXd> actual_pose){
 				// Compute FK
+				ENTERING_REAL_TIME_CRITICAL_CODE();
 				KDLKinematics::ComputeFk(joints_pos,actual_pose);
 				if(actual_pose.size() == 6){
 					KDLKinematics::ApplyMaskVector(actual_pose,actual_pose_);
@@ -181,9 +207,11 @@ class KDLClik: public KDLKinematics
 					assert(actual_pose.size() == cart_size_);
 					actual_pose_ = actual_pose;
 				}
+				EXITING_REAL_TIME_CRITICAL_CODE();
 		}
 		
 		inline void clikCommandStep(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& desired_pose, Eigen::Ref<Eigen::VectorXd> q_out){
+				ENTERING_REAL_TIME_CRITICAL_CODE();
 				if(desired_pose.size() == 6){
 					KDLKinematics::ApplyMaskVector(desired_pose,desired_pose_);
 				}
@@ -193,16 +221,18 @@ class KDLClik: public KDLKinematics
 					desired_pose_ = desired_pose;
 				}
 				// Compute IK
-				v_ = gains_*(desired_pose_-actual_pose_); // TODO + cart_vel_cmd_
+				v_tmp_ = desired_pose_ - actual_pose_; // TODO + cart_vel_cmd_
+				v_.noalias() = gains_ * v_tmp_;
 				KDLKinematics::ComputeIk(joints_pos,v_,qdot_);
 				// Integrate the joints velocities
 				q_out = qdot_ * dt_ + joints_pos;
+				EXITING_REAL_TIME_CRITICAL_CODE();
 		}
 		
 	private:
 		Eigen::MatrixXd gains_tmp_;
 		Eigen::MatrixXd gains_;
-		Eigen::VectorXd v_, qdot_, actual_pose_, desired_pose_;
+		Eigen::VectorXd v_, v_tmp_, qdot_, actual_pose_, desired_pose_;
 		double dt_;
 };
 

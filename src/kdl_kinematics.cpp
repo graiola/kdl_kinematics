@@ -68,6 +68,7 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 
 void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
 {	
+	ENTERING_REAL_TIME_CRITICAL_CODE();
 	assert(joints_pos.size() >= Ndof_);
 	//assert(v_in.size() == cart_size_);
 	assert(qdot_out.size() == Ndof_);
@@ -84,13 +85,13 @@ void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<c
 		pose_vel_tmp_ = v_in;
 	}
 	
-	qdot_out = eigen_jacobian_pinv_ * pose_vel_tmp_;
-	
-	
+	qdot_out.noalias() = eigen_jacobian_pinv_ * pose_vel_tmp_;
+	EXITING_REAL_TIME_CRITICAL_CODE();
 }
 
 void KDLKinematics::ComputeFkDot(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& qdot_in, Ref<VectorXd> v_out)
-{
+{	
+	ENTERING_REAL_TIME_CRITICAL_CODE();
 	assert(joints_pos.size() >= Ndof_);
 	assert(qdot_in.size() >= Ndof_);
 	assert(v_out.size() == cart_size_);
@@ -108,6 +109,7 @@ void KDLKinematics::ComputeFkDot(const Ref<const VectorXd>& joints_pos, const Re
 
         //}
         //ApplyMaskVector(pose_pos_tmp_,pose_pos);
+	EXITING_REAL_TIME_CRITICAL_CODE();
 }
 
 void KDLKinematics::setMask(string mask_str)
@@ -197,7 +199,7 @@ void KDLKinematics::PseudoInverse()
 	
 	eigen_jacobian_pinv_tmp_ = svd_->matrixV() * svd_vect_.asDiagonal();
 	eigen_jacobian_pinv_.noalias() = eigen_jacobian_pinv_tmp_ * matrixU_t_; // NOTE .noalias() does the trick
-
+	
 }
 
 void KDLKinematics::ComputeJac()
