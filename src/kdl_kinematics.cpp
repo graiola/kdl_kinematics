@@ -66,9 +66,11 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	ros_nh_ptr_->shutdown();
 }
 
+
 void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
 {	
 	ENTERING_REAL_TIME_CRITICAL_CODE();
+
 	assert(joints_pos.size() >= Ndof_);
 	//assert(v_in.size() == cart_size_);
 	assert(qdot_out.size() == Ndof_);
