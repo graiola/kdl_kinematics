@@ -46,15 +46,10 @@ class KDLKinematics
 {
 	public:
 		KDLKinematics(std::string chain_root, std::string chain_tip, double damp_max = 0.1, double epsilon = 0.01);
-<<<<<<< HEAD
-		template<typename joints_vector_t>
-		inline void ComputeFk(const joints_vector_t& joints_pos, Eigen::Ref<Eigen::Vector3d> position, Eigen::Ref<Eigen::Matrix3d> orientation)
-=======
 		
 		~KDLKinematics(){if(ros_nh_ptr_!=NULL){delete ros_nh_ptr_;}}
 		
 		inline void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::Vector3d> position, Eigen::Ref<Eigen::Matrix3d> orientation)
->>>>>>> 47107ff04d7dec441514dce34178a08ac741820f
 		{
 			ComputeFk(joints_pos);
 			for(int i = 0; i<3; i++){
@@ -140,11 +135,9 @@ class KDLKinematics
 		double damp_max_, epsilon_, damp_, svd_min_, svd_curr_, mask_cnt_;
 		int Ndof_, cart_size_;
 		boost::shared_ptr<svd_t> svd_;
-<<<<<<< HEAD
-		Eigen::VectorXd svd_vect_, pose_pos_tmp_;
-=======
+
 		Eigen::VectorXd svd_vect_, pose_pos_tmp_, pose_vel_tmp_;
->>>>>>> 47107ff04d7dec441514dce34178a08ac741820f
+
 		mask_t mask_;
 };
 
