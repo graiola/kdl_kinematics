@@ -3,7 +3,7 @@ project(kdl_kinematics)
 
 set(CMAKE_CXX_FLAGS "-Wall -std=c++0x")
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb")
-set(CMAKE_CXX_FLAGS_RELEASE "-O3")
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
@@ -15,6 +15,12 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(orocos_kdl REQUIRED)
 find_package(Boost REQUIRED)
+
+
+# Define macros to check for real time requirements
+if(REALTIME_CHECKS)
+   add_definitions(-DREALTIME_CHECKS)
+endif()
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
@@ -130,7 +136,7 @@ target_link_libraries(kdl_kinematics_test ${PROJECT_NAME})
 # )
 
 ## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}
+install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME} ${PROJECT_NAME}_test
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -154,11 +160,10 @@ install(DIRECTORY include/${PROJECT_NAME}/
 #)
 
 ## Mark other files for installation (e.g. launch and bag files, etc.)
-# install(FILES
-#   # myfile1
-#   # myfile2
-#   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
-# )
+install(DIRECTORY launch
+   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
+   FILES_MATCHING PATTERN "*.launch"
+)
 
 #############
 ## Testing ##

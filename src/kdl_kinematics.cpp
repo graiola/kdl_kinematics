@@ -1,4 +1,5 @@
 #include "kdl_kinematics/kdl_kinematics.h"
+#include <boost/concept_check.hpp>
 
 using namespace std;
 using namespace KDL;
@@ -16,12 +17,12 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	int argc = 1;
 	char* arg0 = strdup(ros_node_name_.c_str());
 	char* argv[] = {arg0, 0};
-	init(argc, argv, ros_node_name_);
+	init(argc, argv, ros_node_name_, init_options::NoSigintHandler);
 	free (arg0);
 	
-
 	if(ros::master::check()){
-		ros_nh_ptr_ = boost::make_shared<NodeHandle> ("");
+		//ros_nh_ptr_ = boost::make_shared<NodeHandle> ("");
+		ros_nh_ptr_ = new NodeHandle("");
 	}
 	else{
 	    std::string err("Roscore not found");
@@ -29,7 +30,6 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	    throw std::runtime_error(err);
 	}
 
-	ros_nh_ptr_ = boost::make_shared<NodeHandle> ("");
 	ros_nh_ptr_->param("robot_description", robot_description_, string());
 	
 	KDL::Tree* kdl_tree_ptr_tmp;
@@ -66,21 +66,56 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 	ros_nh_ptr_->shutdown();
 }
 
+<<<<<<< HEAD
 /*void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
 {
+=======
+void KDLKinematics::ComputeIk(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& v_in, Ref<VectorXd> qdot_out)
+{	
+	ENTERING_REAL_TIME_CRITICAL_CODE();
+>>>>>>> 47107ff04d7dec441514dce34178a08ac741820f
 	assert(joints_pos.size() >= Ndof_);
-	assert(v_in.size() == cart_size_);
+	//assert(v_in.size() == cart_size_);
 	assert(qdot_out.size() == Ndof_);
-	
 	for(int i = 0; i<Ndof_; i++)
 		kdl_joints_(i) = joints_pos(i);
-	
 	ComputeJac();
-	
 	PseudoInverse();
+	if(v_in.size() == 6){
+		ApplyMaskVector(v_in,pose_vel_tmp_);
+	}
+	else
+	{	
+		assert(v_in.size() == cart_size_);
+		pose_vel_tmp_ = v_in;
+	}
 	
-	qdot_out = eigen_jacobian_pinv_ * v_in;
-}*/
+	qdot_out.noalias() = eigen_jacobian_pinv_ * pose_vel_tmp_;
+	EXITING_REAL_TIME_CRITICAL_CODE();
+}
+
+void KDLKinematics::ComputeFkDot(const Ref<const VectorXd>& joints_pos, const Ref<const VectorXd>& qdot_in, Ref<VectorXd> v_out)
+{	
+	ENTERING_REAL_TIME_CRITICAL_CODE();
+	assert(joints_pos.size() >= Ndof_);
+	assert(qdot_in.size() >= Ndof_);
+	assert(v_out.size() == cart_size_);
+
+        for(int i = 0; i<Ndof_; i++)
+            kdl_joints_(i) = joints_pos[i];
+
+        ComputeJac();
+
+        //if(v_out.size() == cart_size_){
+        v_out = eigen_jacobian_ * qdot_in;
+        //}
+        //else
+        //{
+
+        //}
+        //ApplyMaskVector(pose_pos_tmp_,pose_pos);
+	EXITING_REAL_TIME_CRITICAL_CODE();
+}
 
 void KDLKinematics::setMask(string mask_str)
 {
@@ -131,12 +166,21 @@ void KDLKinematics::resizeCartAttributes(int size)
 {
 	eigen_jacobian_.resize(size,Ndof_);
 	eigen_jacobian_pinv_.resize(Ndof_,size);
+	eigen_jacobian_pinv_tmp_.resize(Ndof_,size);
+	
 	svd_.reset(new svd_t(size,Ndof_)); // FIXME prb this is not rt safe
+	svd_->compute(eigen_jacobian_, ComputeThinU | ComputeThinV); // This is not rt safe! We trigger it here to pre-allocate the internal variables
+	matrixU_t_.resize(size,size);
+	matrixV_.resize(Ndof_,size);
+	
 	svd_vect_.resize(size);
+	pose_vel_tmp_.resize(size);
 	// Clear
 	eigen_jacobian_.fill(0.0);
 	eigen_jacobian_pinv_.fill(0.0);
+	eigen_jacobian_pinv_tmp_.fill(0.0);
 	svd_vect_.fill(0.0);
+	pose_vel_tmp_.fill(0.0);
 }
 
 void KDLKinematics::PseudoInverse()
@@ -153,7 +197,14 @@ void KDLKinematics::PseudoInverse()
 		svd_vect_[i] = svd_curr_/(svd_curr_*svd_curr_+damp_*damp_);
 	}
 	
-	eigen_jacobian_pinv_ = svd_->matrixV() * svd_vect_.asDiagonal() * svd_->matrixU().transpose();	
+	matrixU_t_ = svd_->matrixU().transpose();
+	matrixV_ = svd_->matrixV();
+
+	//eigen_jacobian_pinv_ = svd_->matrixV() * svd_vect_.asDiagonal() * svd_->matrixU().transpose(); // NOTE this is not rt safe
+	
+	eigen_jacobian_pinv_tmp_ = svd_->matrixV() * svd_vect_.asDiagonal();
+	eigen_jacobian_pinv_.noalias() = eigen_jacobian_pinv_tmp_ * matrixU_t_; // NOTE .noalias() does the trick
+	
 }
 
 void KDLKinematics::ComputeJac()
@@ -166,45 +217,65 @@ void KDLKinematics::ComputeJac()
 		ApplyMaskRowMatrix(kdl_jacobian_.data,eigen_jacobian_);
 }
 
-void KDLKinematics::ApplyMaskIdentityMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
+void KDLKinematics::ComputeJac(const Ref<const VectorXd>& joints_pos, Ref<MatrixXd> jacobian)
 {
-			//assert(in.rows() == in.cols()); // it is a square matrix
-			//assert(in.rows() == mask_.size());
-			//assert(out.rows() == out.cols()); // it is a square matrix
-			//assert(out.rows() == cart_size_);
-			mask_cnt_ = 0;
-			for(unsigned int i = 0; i < mask_.size(); i++)
-				if(getMaskValue(i))
-				{
-					out(mask_cnt_,mask_cnt_) = in(i,i);
-					mask_cnt_++;
-				}
+        assert(joints_pos.size() >= Ndof_);
+
+        for(int i = 0; i<Ndof_; i++)
+            kdl_joints_(i) = joints_pos[i];
+
+        ComputeJac();
+
+        jacobian = eigen_jacobian_;
 }
 
-void KDLKinematics::ApplyMaskRowMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
+void KDLKinematics::ApplyMaskIdentityMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
 {
-	//assert(in.rows() == mask_.size());
-	//assert(out.rows() == cart_size_);
+	assert(in.rows() == in.cols()); // it is a square matrix
+	assert(in.rows() == static_cast<int>(mask_.size()));
+	assert(out.rows() == out.cols()); // it is a square matrix
+	assert(out.rows() == cart_size_);
 	mask_cnt_ = 0;
 	for(unsigned int i = 0; i < mask_.size(); i++)
 		if(getMaskValue(i))
 		{
-			out.row(mask_cnt_) = in.row(i);
+			out(mask_cnt_,mask_cnt_) = in(i,i);
+			mask_cnt_++;
+		}
+}
+
+void KDLKinematics::ApplyMaskRowMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
+{
+	assert(in.rows() == static_cast<int>(mask_.size()));
+	assert(out.rows() == cart_size_);
+	mask_cnt_ = 0;
+	for(unsigned int i = 0; i < mask_.size(); i++)
+		if(getMaskValue(i))
+		{
+			for(int j = 0; j < Ndof_; j++)
+			  out(mask_cnt_,j) = in(i,j); 
+			//out.row(mask_cnt_) = in.row(i); // It causes dynamic memory allocation
 			mask_cnt_++;
 		}
 }
 
 void KDLKinematics::ApplyMaskColMatrix(const Ref<const MatrixXd>& in, Ref<MatrixXd> out)
 {
-	//assert(in.cols() == mask_.size());
-	//assert(out.cols() == cart_size_);
+	assert(in.cols() == static_cast<int>(mask_.size()));
+	assert(out.cols() == cart_size_);
 	mask_cnt_ = 0;
 	for(unsigned int i = 0; i < mask_.size(); i++)
 		if(getMaskValue(i))
 		{
-			out.col(mask_cnt_) = in.col(i);
+		  	for(int j = 0; j < Ndof_; j++)
+			  out(j,mask_cnt_) = in(j,i); 
+			//out.col(mask_cnt_) = in.col(i); // It causes dynamic memory allocation
 			mask_cnt_++;
 		}
 }
 
+
+
 }
+
+
