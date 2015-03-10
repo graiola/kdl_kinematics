@@ -19,6 +19,7 @@ find_package(Boost REQUIRED)
 
 # Define macros to check for real time requirements
 if(REALTIME_CHECKS)
+   message(STATUS "Real time checks on")
    add_definitions(-DREALTIME_CHECKS)
 endif()
 
@@ -110,16 +111,12 @@ include_directories(
 ## Declare a cpp library
 add_library(${PROJECT_NAME} include/${PROJECT_NAME}/kdl_kinematics.h src/kdl_kinematics.cpp)
 
-## Declare a cpp executable
-add_executable(${PROJECT_NAME}_test src/kdl_kinematics_test.cpp)
-
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(kdl_meka_parser_node kdl_meka_parser_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES} ${orocos_kdl_LIBRARIES} ${Boost_LIBRARIES})
-target_link_libraries(kdl_kinematics_test ${PROJECT_NAME})
 
 #############
 ## Install ##
@@ -136,7 +133,7 @@ target_link_libraries(kdl_kinematics_test ${PROJECT_NAME})
 # )
 
 ## Mark executables and/or libraries for installation
-install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME} ${PROJECT_NAME}_test
+install(TARGETS ${PROJECT_NAME} ${PROJECT_NAME}
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -170,10 +167,9 @@ install(DIRECTORY launch
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_kdl_meka_parser.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+catkin_add_gtest(test_kdl_kinematics 
+  test/test_kdl_kinematics.cpp)
+  
+if(TARGET test_kdl_kinematics)
+  target_link_libraries(test_kdl_kinematics ${PROJECT_NAME})
+endif()
