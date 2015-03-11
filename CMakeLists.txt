@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(kdl_kinematics)
 
 set(CMAKE_CXX_FLAGS "-Wall -std=c++0x")
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb")
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -ggdb -DEIGEN_MALLOC_CHECKS")
 set(CMAKE_CXX_FLAGS_RELEASE "-O3 -DNDEBUG")
 
 ## Find catkin macros and libraries
@@ -18,10 +18,10 @@ find_package(Boost REQUIRED)
 
 
 # Define macros to check for real time requirements
-if(REALTIME_CHECKS)
-   message(STATUS "Real time checks on")
-   add_definitions(-DREALTIME_CHECKS)
-endif()
+#if(REALTIME_CHECKS)
+#   message(STATUS "Real time checks on")
+#   add_definitions(-DREALTIME_CHECKS)
+#endif()
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)

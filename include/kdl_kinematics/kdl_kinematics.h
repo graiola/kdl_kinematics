@@ -4,7 +4,7 @@
 ////////// ROS
 #include "ros/ros.h"
 
-#ifdef REALTIME_CHECKS
+#ifdef EIGEN_MALLOC_CHECKS
   #define EIGEN_RUNTIME_NO_MALLOC
   #define ENTERING_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(false); } while (0) 
   #define EXITING_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(true); } while (0) 
