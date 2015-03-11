@@ -49,16 +49,16 @@ class KDLKinematics
 		KDLKinematics(std::string chain_root, std::string chain_tip, double damp_max = 0.1, double epsilon = 0.01);
 		~KDLKinematics(){if(ros_nh_ptr_!=NULL){delete ros_nh_ptr_;}}
 		
-		void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::Vector3d> position, Eigen::Ref<Eigen::Matrix3d> orientation);
-		void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::VectorXd> pose_pos);
-		void ComputeFkDot(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::VectorXd& qdot_in, Eigen::Ref<Eigen::VectorXd> v_out);
-		void ComputeIk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& v_in, Eigen::Ref<Eigen::VectorXd> qdot_out);
-		void ComputeJac(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::MatrixXd> jacobian);
+		void ComputeFk(const Eigen::VectorXd& joints_pos, Eigen::Vector3d& position, Eigen::Matrix3d& orientation);
+		void ComputeFk(const Eigen::VectorXd& joints_pos, Eigen::VectorXd& pose_pos);
+		void ComputeFkDot(const Eigen::VectorXd& joints_pos, const Eigen::VectorXd& qdot_in, Eigen::VectorXd& v_out);
+		void ComputeIk(const Eigen::VectorXd& joints_pos, const Eigen::VectorXd& v_in, Eigen::VectorXd& qdot_out);
+		void ComputeJac(const Eigen::VectorXd& joints_pos, Eigen::MatrixXd& jacobian);
 		
-		void ApplyMaskVector(const Eigen::Ref<const Eigen::VectorXd>& in, Eigen::Ref<Eigen::VectorXd> out);
-		void ApplyMaskIdentityMatrix(const Eigen::Ref<const Eigen::MatrixXd>& in, Eigen::Ref<Eigen::MatrixXd> out);
-		void ApplyMaskRowMatrix(const Eigen::Ref<const Eigen::MatrixXd>& in, Eigen::Ref<Eigen::MatrixXd> out);
-		void ApplyMaskColMatrix(const Eigen::Ref<const Eigen::MatrixXd>& in, Eigen::Ref<Eigen::MatrixXd> out);
+		void ApplyMaskVector(const Eigen::VectorXd& in, Eigen::VectorXd& out);
+		void ApplyMaskIdentityMatrix(const Eigen::MatrixXd& in, Eigen::MatrixXd& out);
+		void ApplyMaskRowMatrix(const Eigen::MatrixXd& in, Eigen::MatrixXd& out);
+		void ApplyMaskColMatrix(const Eigen::MatrixXd& in, Eigen::MatrixXd& out);
 		
 		Eigen::MatrixXd getInvJacobian(){return eigen_jacobian_pinv_;}
 		Eigen::MatrixXd getJacobian(){return eigen_jacobian_;}
@@ -75,7 +75,7 @@ class KDLKinematics
 		void PseudoInverse();
 		void ComputeJac();
 		
-		inline void ComputeFk(const Eigen::Ref<const Eigen::VectorXd>& joints_pos)
+		inline void ComputeFk(const Eigen::VectorXd& joints_pos)
 		{
 			assert(joints_pos.size() >= Ndof_);
 			for(int i = 0; i<Ndof_; i++)
@@ -159,14 +159,14 @@ class KDLClik: public KDLKinematics
 		
 		const Eigen::MatrixXd getGains(){return gains_;}
 		
-		inline void clikStatusStep(const Eigen::Ref<const Eigen::VectorXd>& joints_pos){
+		inline void clikStatusStep(const Eigen::VectorXd& joints_pos){
 				// Compute FK
 				ENTERING_REAL_TIME_CRITICAL_CODE();
 				KDLKinematics::ComputeFk(joints_pos,actual_pose_);
 				EXITING_REAL_TIME_CRITICAL_CODE();
 		}
 		
-		inline void clikStatusStep(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, Eigen::Ref<Eigen::VectorXd> actual_pose){
+		inline void clikStatusStep(const Eigen::VectorXd& joints_pos, Eigen::VectorXd& actual_pose){
 				// Compute FK
 				ENTERING_REAL_TIME_CRITICAL_CODE();
 				KDLKinematics::ComputeFk(joints_pos,actual_pose);
@@ -181,7 +181,7 @@ class KDLClik: public KDLKinematics
 				EXITING_REAL_TIME_CRITICAL_CODE();
 		}
 		
-		inline void clikCommandStep(const Eigen::Ref<const Eigen::VectorXd>& joints_pos, const Eigen::Ref<const Eigen::VectorXd>& desired_pose, Eigen::Ref<Eigen::VectorXd> q_out){
+		inline void clikCommandStep(const Eigen::VectorXd& joints_pos, const Eigen::VectorXd& desired_pose, Eigen::VectorXd& q_out){
 				ENTERING_REAL_TIME_CRITICAL_CODE();
 				if(desired_pose.size() == 6){
 					KDLKinematics::ApplyMaskVector(desired_pose,desired_pose_);

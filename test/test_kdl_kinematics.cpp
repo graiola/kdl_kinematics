@@ -33,6 +33,7 @@ TEST(KDLKinematics, ComputeForwardKinematics)
   Vector3d position;
   Matrix3d orientation;
   
+  
   ENTERING_REAL_TIME_CRITICAL_CODE();
   EXPECT_NO_THROW(kk.ComputeFk(joints_pos,pose));
   EXPECT_NO_THROW(kk.ComputeFk(joints_pos,position,orientation));
