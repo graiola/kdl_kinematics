@@ -6,11 +6,11 @@
 
 #ifdef EIGEN_MALLOC_CHECKS
   #define EIGEN_RUNTIME_NO_MALLOC
-  #define ENTERING_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(false); } while (0) 
-  #define EXITING_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(true); } while (0) 
+  #define START_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(false); } while (0) 
+  #define END_REAL_TIME_CRITICAL_CODE() do { Eigen::internal::set_is_malloc_allowed(true); } while (0) 
 #else
-  #define ENTERING_REAL_TIME_CRITICAL_CODE() do {  } while (0) 
-  #define EXITING_REAL_TIME_CRITICAL_CODE() do {  } while (0) 
+  #define START_REAL_TIME_CRITICAL_CODE() do {  } while (0) 
+  #define END_REAL_TIME_CRITICAL_CODE() do {  } while (0) 
 #endif
 
 ////////// Eigen
@@ -133,7 +133,6 @@ class KDLClik: public KDLKinematics
 			v_tmp_.fill(0.0);
 			actual_pose_.fill(0.0);
 			desired_pose_.fill(0.0);
-			
 		}
 		
 		void setMask(std::string mask_str)
@@ -161,14 +160,11 @@ class KDLClik: public KDLKinematics
 		
 		inline void clikStatusStep(const Eigen::VectorXd& joints_pos){
 				// Compute FK
-				ENTERING_REAL_TIME_CRITICAL_CODE();
 				KDLKinematics::ComputeFk(joints_pos,actual_pose_);
-				EXITING_REAL_TIME_CRITICAL_CODE();
 		}
 		
 		inline void clikStatusStep(const Eigen::VectorXd& joints_pos, Eigen::VectorXd& actual_pose){
 				// Compute FK
-				ENTERING_REAL_TIME_CRITICAL_CODE();
 				KDLKinematics::ComputeFk(joints_pos,actual_pose);
 				if(actual_pose.size() == 6){
 					KDLKinematics::ApplyMaskVector(actual_pose,actual_pose_);
@@ -178,11 +174,9 @@ class KDLClik: public KDLKinematics
 					assert(actual_pose.size() == cart_size_);
 					actual_pose_ = actual_pose;
 				}
-				EXITING_REAL_TIME_CRITICAL_CODE();
 		}
 		
 		inline void clikCommandStep(const Eigen::VectorXd& joints_pos, const Eigen::VectorXd& desired_pose, Eigen::VectorXd& q_out){
-				ENTERING_REAL_TIME_CRITICAL_CODE();
 				if(desired_pose.size() == 6){
 					KDLKinematics::ApplyMaskVector(desired_pose,desired_pose_);
 				}
@@ -197,7 +191,6 @@ class KDLClik: public KDLKinematics
 				KDLKinematics::ComputeIk(joints_pos,v_,qdot_);
 				// Integrate the joints velocities
 				q_out = qdot_ * dt_ + joints_pos;
-				EXITING_REAL_TIME_CRITICAL_CODE();
 		}
 		
 	private:

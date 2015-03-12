@@ -34,11 +34,11 @@ TEST(KDLKinematics, ComputeForwardKinematics)
   Matrix3d orientation;
   
   
-  ENTERING_REAL_TIME_CRITICAL_CODE();
+  START_REAL_TIME_CRITICAL_CODE();
   EXPECT_NO_THROW(kk.ComputeFk(joints_pos,pose));
   EXPECT_NO_THROW(kk.ComputeFk(joints_pos,position,orientation));
   EXPECT_NO_THROW(kk.ComputeFkDot(joints_pos,qdot,velocity)); // NOTE: Rt problems with the interface
-  EXITING_REAL_TIME_CRITICAL_CODE();
+  END_REAL_TIME_CRITICAL_CODE();
 }
 
 TEST(KDLKinematics, ComputeJacobian)
@@ -48,9 +48,9 @@ TEST(KDLKinematics, ComputeJacobian)
   VectorXd joints_pos(kk.getNdof());
   MatrixXd jacobian(kk.getCartSize(),kk.getNdof());
 
-  ENTERING_REAL_TIME_CRITICAL_CODE();
+  START_REAL_TIME_CRITICAL_CODE();
   EXPECT_NO_THROW(kk.ComputeJac(joints_pos,jacobian));
-  EXITING_REAL_TIME_CRITICAL_CODE();
+  END_REAL_TIME_CRITICAL_CODE();
 }
 
 TEST(KDLKinematics, ComputeInverseKinematics)
@@ -63,9 +63,9 @@ TEST(KDLKinematics, ComputeInverseKinematics)
   VectorXd velocity(kk.getCartSize());
   VectorXd qdot(kk.getNdof());
   
-  ENTERING_REAL_TIME_CRITICAL_CODE();
+  START_REAL_TIME_CRITICAL_CODE();
   EXPECT_NO_THROW(kk.ComputeIk(joints_pos,velocity,qdot));
-  EXITING_REAL_TIME_CRITICAL_CODE();
+  END_REAL_TIME_CRITICAL_CODE();
 }
 
 int main(int argc, char** argv)
