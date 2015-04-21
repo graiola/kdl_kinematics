@@ -1,5 +1,6 @@
 #include "kdl_kinematics/kdl_kinematics.h"
 #include <boost/concept_check.hpp>
+#include <../../opt/ros/indigo/include/kdl/chain.hpp>
 
 using namespace std;
 using namespace KDL;
@@ -47,12 +48,20 @@ KDLKinematics::KDLKinematics(string chain_root, string chain_tip, double damp_ma
 		throw std::runtime_error(err);
 	}
 	
+	
 	delete kdl_tree_ptr_tmp; // It is no needed anymore
 	
 	kdl_jacobian_solver_ptr_ = boost::make_shared<ChainJntToJacSolver> (kdl_chain_);
 	kdl_fk_solver_ptr_ = boost::make_shared<ChainFkSolverPos_recursive> (kdl_chain_);
 	
 	Ndof_ = kdl_chain_.getNrOfJoints();
+	
+	// Retrain the joint names
+	joints_names_.resize(Ndof_);
+	for(unsigned int i=1;i<kdl_chain_.getNrOfSegments()-1;i++) //NOTE Remove the origin and the last segments
+	{
+	  joints_names_[i-1] = kdl_chain_.getSegment(i).getJoint ().getName();
+	}
 	
 	// Create joint arrays
 	kdl_joints_ = JntArray(Ndof_);

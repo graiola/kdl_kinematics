@@ -61,6 +61,8 @@ class KDLKinematics
 		KDL::Chain getChain(){return kdl_chain_;}
 		void setMask(std::string mask_str);
 		
+		std::string getJointName(const int i){assert(i>=0 && i<Ndof_); return joints_names_[i];}
+		
 	protected: // For internal use only (they use preallocated variables)
 	  
 		void PseudoInverse();
@@ -80,6 +82,8 @@ class KDLKinematics
 		std::string ros_node_name_;
 		std::string robot_description_;
 		std::string chain_root_, chain_tip_;
+		std::vector<std::string> joints_names_;
+		
 		ros::NodeHandle* ros_nh_ptr_;
 		//boost::shared_ptr<ros::NodeHandle> ros_nh_ptr_;
 		KDL::Chain kdl_chain_;
