@@ -1,6 +1,6 @@
 #include "kdl_kinematics/kdl_kinematics.h"
 #include <boost/concept_check.hpp>
-#include <../../opt/ros/indigo/include/kdl/chain.hpp>
+#include <kdl/chain.hpp>
 
 using namespace std;
 using namespace KDL;
